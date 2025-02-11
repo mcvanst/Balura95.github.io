@@ -280,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playPauseButton = document.getElementById('play-pause-button');
     if (playPauseButton) {
         playPauseButton.addEventListener('click', window.togglePlayback);
+        alert("Testfail pausebutton")
     } else {
         console.error("Play/Pause button not found in DOM.");
     }
