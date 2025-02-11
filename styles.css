@@ -1,30 +1,38 @@
-/* General styles */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;  /* Centers content horizontally */
-    justify-content: center; /* Centers content vertically */
-    min-height: 100vh; /* Full viewport height */
-    text-align: center;
+    align-items: center;
 }
 
-/* Game container - Ensures all content inside is centered */
 #game-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Centers content vertically */
-    align-items: center; /* Centers content horizontally */
     width: 90%;
     max-width: 400px;
     padding: 20px;
+    margin: 20px auto;
     border: 2px solid #000;
     border-radius: 10px;
+    text-align: center;
 }
 
-/* Mobile-specific adjustments */
+/* Center buttons horizontally */
+#start-playback,
+#stop-button,
+#play-pause-button {
+    display: block;
+    margin: 10px auto;
+}
+
+/* Style for the swipe instruction text */
+#swipe-instruction {
+    font-size: 1.2em;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* Responsive adjustments */
 @media (max-width: 600px) {
     #game-container {
         padding: 10px;
@@ -35,16 +43,10 @@ body {
     }
 }
 
-/* Buttons & other elements */
 .card-panel {
     border-radius: 8px;
 }
+
 .btn {
     margin-top: 20px;
-}
-
-/* Ensures buttons are centered */
-button {
-    display: block;
-    margin: 10px auto;
 }

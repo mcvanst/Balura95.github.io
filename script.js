@@ -298,5 +298,11 @@ function detectSwipe(element, callback) {
 
 // Attach swipe detection to the whole document
 detectSwipe(document, () => {
-    location.reload(); // Reload page to scan a new song
+    const instruction = document.getElementById('swipe-instruction');
+    // If the instruction is still visible, hide it on first swipe.
+    if (instruction && instruction.style.display !== 'none') {
+        instruction.style.display = 'none';
+    } else {
+        location.reload(); // For subsequent swipes, reload page to scan a new song.
+    }
 });
