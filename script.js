@@ -155,10 +155,20 @@ async function refreshToken() {
 }
 
 window.onload = () => {
-    getToken();
-    const token = localStorage.getItem('access_token');
-    if (token) {
+    getToken(); // Token holen und UI aktualisieren
+    if (localStorage.getItem('access_token')) {
         toggleUIAfterLogin();
+    }
+
+    // Stop-Button Event-Listener registrieren
+    const stopButton = document.getElementById('stop-button');
+    if (stopButton) {
+        stopButton.addEventListener('click', () => {
+            console.log("Stop button clicked!");
+            stopPlayback();
+        });
+    } else {
+        console.error("Stop button not found.");
     }
 };
 
@@ -260,7 +270,23 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Stop button clicked!");
             if (typeof window.stopPlayback === "function") {
                 window.stopPlayback();
-            } else {
+            } else {window.onload = () => {
+                getToken(); // Token holen und UI aktualisieren
+                if (localStorage.getItem('access_token')) {
+                    toggleUIAfterLogin();
+                }
+            
+                // Stop-Button Event-Listener registrieren
+                const stopButton = document.getElementById('stop-button');
+                if (stopButton) {
+                    stopButton.addEventListener('click', () => {
+                        console.log("Stop button clicked!");
+                        stopPlayback();
+                    });
+                } else {
+                    console.error("Stop button not found.");
+                }
+            };
                 console.error("stopPlayback function is not defined.");
             }
         });
