@@ -275,7 +275,10 @@ document.addEventListener('swiped-left', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const stopButton = document.getElementById('stop-button');
     if (stopButton) {
+        stopButton.removeEventListener('click', stopPlayback); // Vorherige Listener entfernen (falls doppelt)
         stopButton.addEventListener('click', stopPlayback);
+    } else {
+        console.error("Stop button not found in DOM.");
     }
 });
 
