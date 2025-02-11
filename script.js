@@ -225,59 +225,27 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     
 
     window.stopPlayback = function() {
-        if (!window.deviceId) {
-            console.error("Device ID not set. Cannot stop playback.");
-            return;
+    if (!window.deviceId) {
+        console.error("Device ID not set. Cannot stop playback.");
+        return;
+    }
+
+    fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
-    
-        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            }
-        }).then(response => {
-            if (response.ok) {
-                console.log("Playback stopped.");
-            } else {
-                console.error("Failed to stop playback:", response);
-            }
-        }).catch(error => {
-            console.error("Error stopping playback:", error);
-        });
-    };
-    
-        // Geräte abrufen
-        const response = await fetch("https://api.spotify.com/v1/me/player/devices", {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-    
-        if (!data.devices || data.devices.length === 0) {
-            alert("No active Spotify device found. Open Spotify on your phone or PC.");
-            return;
+    }).then(response => {
+        if (response.ok) {
+            console.log("Playback stopped.");
+        } else {
+            console.error("Failed to stop playback:", response);
         }
-    
-        console.log("Available devices:", data.devices);
-    
-        // Falls kein Webplayer genutzt wird, nehme das erste aktive Gerät
-        let deviceId = window.deviceId || data.devices.find(d => d.is_active)?.id || data.devices[0].id;
-    
-        console.log("Using device:", deviceId);
-    
-        // Wiedergabe stoppen
-        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).then(response => {
-            if (response.status === 204) {
-                console.log("Playback stopped successfully.");
-            } else {
-                response.json().then(data => console.error("Spotify API error:", data));
-            }
-        }).catch(error => {
-            console.error("Error sending stop request:", error);
-        });
-    };
+    }).catch(error => {
+        console.error("Error stopping playback:", error);
+    });
+};
+
     
 };
 
@@ -300,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Stop button not found in DOM.");
     }
 });
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('start-playback');
