@@ -53,7 +53,7 @@ function startQrScanner() {
             const trackUri = `spotify:track:${match[1]}`;
             // Optionally, store it for later or directly start playback:
             window.lastScannedTrackUri = trackUri;
-            
+            alert("Track loaded: " + trackUri);
             // You can auto-start playback if desired:
             window.playTrack(trackUri);
         } else {
@@ -187,12 +187,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     
     player.addListener('ready', ({ device_id }) => {
         window.deviceId = device_id;
-        console.log("Spotify SDK ready. Device ID:", device_id);
-        // Enable the play button here (if previously disabled)
-        const playButton = document.getElementById('start-playback');
-        if (playButton) {
-            playButton.disabled = false;
-        }
     });
     player.connect();
 
@@ -204,36 +198,36 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             return;
         }
         
-        // Attempt to transfer playback first (optional but recommended)
-        await fetch(`https://api.spotify.com/v1/me/player`, {
-            method: 'PUT',
-            body: JSON.stringify({ device_ids: [window.deviceId], play: false }),
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        // Now start playback
-        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+        // Attempt to transfer playback and start the song...
+        let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
             headers: { 
                 'Authorization': `Bearer ${token}`, 
                 'Content-Type': 'application/json' 
             }
-        }).then(response => {
-            if (response.status === 204) {
-                console.log("Track started successfully.");
-            } else {
-                response.json().then(data => console.error("Spotify API error:", data));
-            }
-        }).catch(error => {
-            console.error("Error sending play request:", error);
         });
+        
+        if (response.status === 401) {
+            console.error("Access token expired or invalid.");
+            alert("Session expired. Logging out...");
+            logout();
+        } else if (response.status === 204) {
+            console.log("Track started successfully.");
+        } else {
+            const data = await response.json();
+            console.error("Spotify API error:", data);
+        }
     };
-};
+    
+    
 
+
+    
+    
+
+    
+};
 
 function logout() {
     localStorage.clear();
