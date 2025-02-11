@@ -192,36 +192,47 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
     window.playTrack = async function(trackUri) {
         const token = localStorage.getItem('access_token');
-        
         if (!token) {
             console.error("No access token found.");
             alert("Not logged in. Please authenticate with Spotify.");
             return;
         }
-    
-        // Geräte abrufen
-        const response = await fetch("https://api.spotify.com/v1/me/player/devices", {
+        
+        // Get available devices
+        let response = await fetch("https://api.spotify.com/v1/me/player/devices", {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
-    
+        let data = await response.json();
+        
         if (!data.devices || data.devices.length === 0) {
             alert("No active Spotify device found. Open Spotify on your phone or PC.");
             return;
         }
-    
+        
         console.log("Available devices:", data.devices);
-    
-        // Falls kein Webplayer genutzt wird, nehme das erste aktive Gerät
+        
+        // Choose the device: prefer our web player (if already set) or the first active one
         let deviceId = window.deviceId || data.devices.find(d => d.is_active)?.id || data.devices[0].id;
-    
         console.log("Using device:", deviceId);
-    
-        // Wiedergabe auf dem aktiven Gerät starten
+        
+        // Transfer playback to our device (if it's not already active)
+        await fetch(`https://api.spotify.com/v1/me/player`, {
+            method: 'PUT',
+            body: JSON.stringify({ device_ids: [deviceId], play: false }),
+            headers: { 
+                'Authorization': `Bearer ${token}`, 
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Now try starting playback
         fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            headers: { 
+                'Authorization': `Bearer ${token}`, 
+                'Content-Type': 'application/json'
+            }
         }).then(response => {
             if (response.status === 204) {
                 console.log("Track started successfully.");
@@ -270,24 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Stop button clicked!");
             if (typeof window.stopPlayback === "function") {
                 window.stopPlayback();
-            } else {window.onload = () => {
-                getToken(); // Token holen und UI aktualisieren
-                if (localStorage.getItem('access_token')) {
-                    toggleUIAfterLogin();
-                }
-            
-                // Stop-Button Event-Listener registrieren
-                const stopButton = document.getElementById('stop-button');
-                if (stopButton) {
-                    stopButton.addEventListener('click', () => {
-                        console.log("Stop button clicked!");
-                        stopPlayback();
-                    });
-                } else {
-                    console.error("Stop button not found.");
-                }
-            };
+            } else {
                 console.error("stopPlayback function is not defined.");
+                alert("Stop function is not available yet. Please wait a moment.");
             }
         });
     } else {
