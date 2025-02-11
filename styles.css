@@ -33,3 +33,8 @@ body {
 .btn {
     margin-top: 20px;
 }
+
+#start-playback{
+  display: block;
+  margin: auto;
+}
