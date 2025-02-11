@@ -198,51 +198,28 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             return;
         }
         
-        // Get available devices
-        let response = await fetch("https://api.spotify.com/v1/me/player/devices", {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        let data = await response.json();
-        
-        if (!data.devices || data.devices.length === 0) {
-            alert("No active Spotify device found. Open Spotify on your phone or PC.");
-            return;
-        }
-        
-        console.log("Available devices:", data.devices);
-        
-        // Choose the device: prefer our web player (if already set) or the first active one
-        let deviceId = window.deviceId || data.devices.find(d => d.is_active)?.id || data.devices[0].id;
-        console.log("Using device:", deviceId);
-        
-        // Transfer playback to our device (if it's not already active)
-        await fetch(`https://api.spotify.com/v1/me/player`, {
-            method: 'PUT',
-            body: JSON.stringify({ device_ids: [deviceId], play: false }),
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        // Now try starting playback
-        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        // Attempt to transfer playback and start the song...
+        let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
             headers: { 
                 'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json' 
             }
-        }).then(response => {
-            if (response.status === 204) {
-                console.log("Track started successfully.");
-            } else {
-                response.json().then(data => console.error("Spotify API error:", data));
-            }
-        }).catch(error => {
-            console.error("Error sending play request:", error);
         });
+        
+        if (response.status === 401) {
+            console.error("Access token expired or invalid.");
+            alert("Session expired. Logging out...");
+            logout();
+        } else if (response.status === 204) {
+            console.log("Track started successfully.");
+        } else {
+            const data = await response.json();
+            console.error("Spotify API error:", data);
+        }
     };
+    
     
 
     window.stopPlayback = function() {
@@ -269,6 +246,20 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
     
 };
+
+function logout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    // Optionally, you could redirect the user to the login screen:
+    location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', logout);
+    }
+});
 
 document.addEventListener('swiped-left', () => {
     location.reload();
