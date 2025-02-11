@@ -180,13 +180,49 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     });
     player.connect();
 
-    window.playTrack = function(trackUri) {
-        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+    window.playTrack = async function(trackUri) {
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            console.error("No access token found.");
+            alert("Not logged in. Please authenticate with Spotify.");
+            return;
+        }
+    
+        // Geräte abrufen
+        const response = await fetch("https://api.spotify.com/v1/me/player/devices", {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+    
+        if (!data.devices || data.devices.length === 0) {
+            alert("No active Spotify device found. Open Spotify on your phone or PC.");
+            return;
+        }
+    
+        console.log("Available devices:", data.devices);
+    
+        // Falls kein Webplayer genutzt wird, nehme das erste aktive Gerät
+        let deviceId = window.deviceId || data.devices.find(d => d.is_active)?.id || data.devices[0].id;
+    
+        console.log("Using device:", deviceId);
+    
+        // Wiedergabe auf dem aktiven Gerät starten
+        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        }).then(response => {
+            if (response.status === 204) {
+                console.log("Track started successfully.");
+            } else {
+                response.json().then(data => console.error("Spotify API error:", data));
+            }
+        }).catch(error => {
+            console.error("Error sending play request:", error);
         });
     };
+    
 
     window.stopPlayback = function() {
         fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
