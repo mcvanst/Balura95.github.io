@@ -18,11 +18,11 @@ body {
 }
 
 /* Center buttons horizontally */
-#start-playback,
-#stop-button,
-#play-pause-button {
+#start-playback {
     display: block;
+    width: 100%;
     margin: 10px auto;
+    box-sizing: border-box;
 }
 
 /* Style for the swipe instruction text */
