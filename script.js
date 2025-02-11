@@ -222,11 +222,17 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     
     
 
-    window.togglePlayback = async function() {
+    window.togglePlayback = async function () {
         const token = localStorage.getItem('access_token');
         if (!token) {
             console.error("No access token found.");
             alert("Not logged in. Please authenticate with Spotify.");
+            return;
+        }
+    
+        if (!window.deviceId) {
+            console.error("No active Spotify device found.");
+            alert("No active Spotify device found. Open Spotify on your phone or PC.");
             return;
         }
     
@@ -235,31 +241,37 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             const response = await fetch("https://api.spotify.com/v1/me/player", {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+    
+            if (response.status === 204) {
+                console.warn("No active playback session.");
+                alert("No active playback session. Start a song first.");
+                return;
+            }
+    
             const data = await response.json();
     
             if (!data || !data.is_playing) {
-                // If not playing, start/resume playback
-                fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+                // Resume playback
+                await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-                }).then(() => {
-                    console.log("Playback started/resumed.");
-                    document.getElementById('play-pause-button').textContent = "Pause";
-                }).catch(error => console.error("Error resuming playback:", error));
+                });
+                console.log("Playback started/resumed.");
+                document.getElementById('play-pause-button').textContent = "Pause";
             } else {
-                // If playing, pause playback
-                fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
+                // Pause playback
+                await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `Bearer ${token}` }
-                }).then(() => {
-                    console.log("Playback paused.");
-                    document.getElementById('play-pause-button').textContent = "Play";
-                }).catch(error => console.error("Error pausing playback:", error));
+                });
+                console.log("Playback paused.");
+                document.getElementById('play-pause-button').textContent = "Play";
             }
         } catch (error) {
             console.error("Error fetching playback state:", error);
         }
     };
+    
     
 
     
