@@ -43,58 +43,38 @@ async function generateCodeChallenge(verifier) {
     }
 }
 
-// Globaler Status für den QR-Scanner
-window.qrScannerActive = false;
-window.qrScanner = null;
-
 function startQrScanner() {
-    // Falls der Scanner bereits aktiv ist, nichts tun.
-    if (window.qrScannerActive) return;
+    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        console.log('QR Code Scanned:', decodedText);
+        // Remove any spaces and convert URL to Spotify URI if needed:
+        const cleanedText = decodedText.replace(/\s/g, '');
+        const match = cleanedText.match(/open\.spotify\.com\/(?:intl-[a-z]{2}\/)?track\/([a-zA-Z0-9]+)/);
+        if (match && match[1]) {
+            const trackUri = `spotify:track:${match[1]}`;
+            // Optionally, store it for later or directly start playback:
+            window.lastScannedTrackUri = trackUri;
+            alert("Track loaded: " + trackUri);
+            // You can auto-start playback if desired:
+            window.playTrack(trackUri);
+        } else {
+            console.error("Invalid QR Code scanned: " + cleanedText);
+            alert("Invalid Spotify QR Code. Please scan a valid track URL.");
+        }
+    };
 
-    // Initialisiere den Scanner im Element mit der ID "qr-reader"
-    window.qrScanner = new Html5Qrcode("qr-reader");
-    window.qrScannerActive = true;
     const qrConfig = { fps: 10, qrbox: 250 };
 
-    window.qrScanner.start(
+    // Initialize the HTML5 QR code scanner inside the #qr-reader container:
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrCode.start(
         { facingMode: "environment" },
         qrConfig,
-        (decodedText, decodedResult) => {
-            console.log("QR Code Scanned:", decodedText);
-            // Entferne Leerzeichen
-            const cleanedText = decodedText.replace(/\s/g, '');
-            // Extrahiere die Track-ID aus der URL (mit optionalem intl-Teil)
-            const match = cleanedText.match(/open\.spotify\.com\/(?:intl-[a-z]{2}\/)?track\/([a-zA-Z0-9]+)/);
-            if (match && match[1]) {
-                const trackUri = `spotify:track:${match[1]}`;
-                window.lastScannedTrackUri = trackUri;
-                alert("Track loaded: " + trackUri);
-                // Starte den Track
-                window.playTrack(trackUri);
-                // Stoppe den Scanner, um Energie zu sparen
-                window.qrScanner.stop().then(() => {
-                    console.log("QR scanner stopped.");
-                    window.qrScannerActive = false;
-                }).catch(err => {
-                    console.error("Error stopping QR scanner:", err);
-                });
-            } else {
-                console.error("Invalid QR Code scanned: " + cleanedText);
-                alert("Invalid Spotify QR Code. Please scan a valid track URL.");
-            }
-        }
+        qrCodeSuccessCallback
     ).catch(err => {
         console.error("QR code scanning failed:", err);
     });
 }
 
-// Beispiel für das erneute Starten des Scanners (z.B. per Swipe oder Button):
-function restartQrScanner() {
-    // Falls der Scanner gerade nicht aktiv ist, starte ihn erneut.
-    if (!window.qrScannerActive) {
-        startQrScanner();
-    }
-}
 // Start the Spotify authentication process
 async function authenticateSpotify() {
     sessionStorage.clear();
@@ -111,7 +91,7 @@ async function authenticateSpotify() {
 function toggleUIAfterLogin() {
     document.getElementById('login-area').style.display = 'none';
     document.getElementById('player-area').style.display = 'block';
-    startQrScanner();  // Startet den Scanner beim Anzeigen des Player-Bereichs.
+    startQrScanner();  // Start the QR scanner now that the player area is visible.
 }
 
 async function getToken() {
@@ -204,7 +184,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         const token = localStorage.getItem('access_token');
         if (!token) {
             console.error("No access token found.");
-            alert("Not logged in. Please authenticate with Spotify by refreshing this page.");
+            alert("Not logged in. Please authenticate with Spotify.");
             return;
         }
         
@@ -244,6 +224,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         }
     };
     
+    
+    
+
+
+    
+    
+
+    
 };
 
 function logout() {
@@ -252,6 +240,14 @@ function logout() {
     // Optionally, you could redirect the user to the login screen:
     location.reload();
 }
+
+document.addEventListener('swiped-left', () => {
+    location.reload();
+});
+
+
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('start-playback');
@@ -269,55 +265,40 @@ document.addEventListener('DOMContentLoaded', () => {
 function detectSwipe(element, callback) {
     let touchStartX = 0;
     let touchEndX = 0;
-    
-    element.addEventListener('touchstart', function(event) {
-      touchStartX = event.changedTouches[0].screenX;
-      // Debug: log touch start
-      console.log("Touch start:", touchStartX);
-    }, false);
-  
-    element.addEventListener('touchend', function(event) {
-      touchEndX = event.changedTouches[0].screenX;
-      console.log("Touch end:", touchEndX);
-      const swipeDistance = touchStartX - touchEndX;
-      if (swipeDistance > 50) { // Swiped left
-        callback('left');
-      } else if (swipeDistance < -50) { // Swiped right (if needed)
-        callback('right');
-      }
-    }, false);
-  
-    // Optional desktop swipe detection (using mouse)
     let mouseStartX = 0;
     let mouseEndX = 0;
     let isMouseDown = false;
-  
-    element.addEventListener('mousedown', function(event) {
-      isMouseDown = true;
-      mouseStartX = event.screenX;
-      console.log("Mouse start:", mouseStartX);
-    }, false);
-  
-    element.addEventListener('mouseup', function(event) {
-      if (!isMouseDown) return;
-      mouseEndX = event.screenX;
-      console.log("Mouse end:", mouseEndX);
-      const swipeDistance = mouseStartX - mouseEndX;
-      if (swipeDistance > 50) {
-        callback('left');
-      } else if (swipeDistance < -50) {
-        callback('right');
-      }
-      isMouseDown = false;
-    }, false);
-  }
-  
-  // Instead of attaching to document, try attaching to your player area
-  document.addEventListener('DOMContentLoaded', function() {
-    // Registriere die Swipe-Erkennung an document.body
-    detectSwipe(document.body, function(direction) {
-      console.log("Swipe detected, direction:", direction);
-      // Hier kannst du weitere Aktionen definieren, wenn gewünscht.
+
+    // Mobile swipe detection
+    element.addEventListener('touchstart', event => {
+        touchStartX = event.changedTouches[0].screenX;
     });
-  });
-  
+
+    element.addEventListener('touchend', event => {
+        touchEndX = event.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) { // Swiped left
+            callback();
+        }
+    });
+
+    // Desktop swipe detection
+    element.addEventListener('mousedown', event => {
+        isMouseDown = true;
+        mouseStartX = event.screenX;
+    });
+
+    element.addEventListener('mouseup', event => {
+        if (isMouseDown) {
+            mouseEndX = event.screenX;
+            if (mouseStartX - mouseEndX > 50) { // Swiped left with mouse
+                callback();
+            }
+        }
+        isMouseDown = false;
+    });
+}
+
+// Attach swipe detection to the whole document; reloads page to scan a new song.
+detectSwipe(document, () => {
+    location.reload();
+});
