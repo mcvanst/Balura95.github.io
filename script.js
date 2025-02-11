@@ -197,26 +197,40 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             alert("Not logged in. Please authenticate with Spotify.");
             return;
         }
-        
-        // Attempt to transfer playback and start the song...
-        let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json' 
+    
+        // Wait up to 5 seconds for the device ID to be set.
+        let waitTime = 0;
+        while (!window.deviceId && waitTime < 5000) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            waitTime += 200;
+        }
+        if (!window.deviceId) {
+            alert("Spotify player is not ready yet. Please wait a moment and try again.");
+            return;
+        }
+    
+        // Now that we have a device ID, attempt to start playback.
+        try {
+            let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ uris: [trackUri] }),
+                headers: { 
+                    'Authorization': `Bearer ${token}`, 
+                    'Content-Type': 'application/json' 
+                }
+            });
+            if (response.status === 204) {
+                console.log("Track started successfully.");
+            } else if (response.status === 401) {
+                console.error("Access token expired or invalid.");
+                alert("Session expired. Logging out...");
+                logout();
+            } else {
+                const data = await response.json();
+                console.error("Spotify API error:", data);
             }
-        });
-        
-        if (response.status === 401) {
-            console.error("Access token expired or invalid.");
-            alert("Session expired. Logging out...");
-            logout();
-        } else if (response.status === 204) {
-            console.log("Track started successfully.");
-        } else {
-            const data = await response.json();
-            console.error("Spotify API error:", data);
+        } catch (error) {
+            console.error("Error sending play request:", error);
         }
     };
     

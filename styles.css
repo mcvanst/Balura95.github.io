@@ -34,7 +34,8 @@ body {
     margin-top: 20px;
 }
 
-#start-playback{
-
-  margin: auto;
+#start-playback {
+    display: block;
+    margin: 20px auto; /* Centers horizontally */
+    text-align: center;
 }
