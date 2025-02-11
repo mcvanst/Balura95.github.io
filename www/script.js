@@ -207,6 +207,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const playButton = document.getElementById('start-playback');
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+            if (window.lastScannedTrackUri) {
+                window.playTrack(window.lastScannedTrackUri);
+            } else {
+                alert("No track loaded. Please scan a QR code first.");
+            }
+        });
+    }
+});
+
 function detectSwipe(element, callback) {
     let touchStartX = 0;
     let touchEndX = 0;
