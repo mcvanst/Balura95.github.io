@@ -314,23 +314,10 @@ function detectSwipe(element, callback) {
   
   // Instead of attaching to document, try attaching to your player area
   document.addEventListener('DOMContentLoaded', function() {
-    const playerArea = document.getElementById('player-area');
-    if (playerArea) {
-      detectSwipe(playerArea, function(direction) {
-        console.log("Swipe detected, direction:", direction);
-        if (direction === 'left') {
-          const instruction = document.getElementById('swipe-instruction');
-          if (instruction && instruction.style.display !== 'none') {
-            instruction.style.display = 'none';
-            console.log("Instruction hidden on first swipe.");
-          } else {
-            console.log("Subsequent swipe left detected.");
-            // If you want to perform other actions, add them here.
-          }
-        }
-      });
-    } else {
-      console.error("Player area not found for swipe detection.");
-    }
+    // Registriere die Swipe-Erkennung an document.body
+    detectSwipe(document.body, function(direction) {
+      console.log("Swipe detected, direction:", direction);
+      // Hier kannst du weitere Aktionen definieren, wenn gewünscht.
+    });
   });
   
