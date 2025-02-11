@@ -55,7 +55,7 @@ function startQrScanner() {
             window.lastScannedTrackUri = trackUri;
             alert("Track loaded: " + trackUri);
             // You can auto-start playback if desired:
-            // window.playTrack(trackUri);
+            window.playTrack(trackUri);
         } else {
             console.error("Invalid QR Code scanned: " + cleanedText);
             alert("Invalid Spotify QR Code. Please scan a valid track URL.");
