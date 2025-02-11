@@ -224,14 +224,27 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     };
     
 
-    window.stopPlayback = async function() {
-        const token = localStorage.getItem('access_token');
-    
-        if (!token) {
-            console.error("No access token found.");
-            alert("Not logged in. Please authenticate with Spotify.");
+    window.stopPlayback = function() {
+        if (!window.deviceId) {
+            console.error("Device ID not set. Cannot stop playback.");
             return;
         }
+    
+        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log("Playback stopped.");
+            } else {
+                console.error("Failed to stop playback:", response);
+            }
+        }).catch(error => {
+            console.error("Error stopping playback:", error);
+        });
+    };
     
         // Geräte abrufen
         const response = await fetch("https://api.spotify.com/v1/me/player/devices", {
@@ -275,9 +288,14 @@ document.addEventListener('swiped-left', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const stopButton = document.getElementById('stop-button');
     if (stopButton) {
-        stopButton.removeEventListener('click', stopPlayback); // Vorherige Listener entfernen (falls doppelt)
-        console.log("Stop button clicked!");
-        stopButton.addEventListener('click', stopPlayback);
+        stopButton.addEventListener('click', () => {
+            console.log("Stop button clicked!");
+            if (typeof window.stopPlayback === "function") {
+                window.stopPlayback();
+            } else {
+                console.error("stopPlayback function is not defined.");
+            }
+        });
     } else {
         console.error("Stop button not found in DOM.");
     }
