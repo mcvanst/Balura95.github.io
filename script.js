@@ -319,7 +319,13 @@ function detectSwipe(element, callback) {
     });
 }
 
-// Attach swipe detection to the whole document; reloads page to scan a new song.
+// Attach swipe detection to the whole document
 detectSwipe(document, () => {
-    location.reload();
+    const instruction = document.getElementById('swipe-instruction');
+    if (instruction && instruction.style.display !== 'none') {
+        instruction.style.display = 'none';
+        console.log("Swipe detected: Instruction hidden.");
+    } else {
+        console.log("Swipe detected.");
+    }
 });
