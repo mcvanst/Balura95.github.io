@@ -158,7 +158,8 @@ window.onload = () => {
     getToken(); // Token holen und UI aktualisieren
     if (localStorage.getItem('access_token')) {
         toggleUIAfterLogin();
-    }    
+    }
+
 };
 
 setInterval(refreshToken, 30 * 60 * 1000);
@@ -296,16 +297,7 @@ function detectSwipe(element, callback) {
     });
 }
 
-// Attach swipe detection to the whole document
+// Attach swipe detection to the whole document; reloads page to scan a new song.
 detectSwipe(document, () => {
-    const instruction = document.getElementById('swipe-instruction');
-    if (instruction && instruction.style.display !== 'none') {
-        instruction.style.display = 'none';
-        console.log("Swipe detected: Instruction hidden.");
-    } else {
-        // For subsequent swipes, you can log or perform any other action:
-        console.log("Swipe detected.");
-    }
+    location.reload();
 });
-
-
