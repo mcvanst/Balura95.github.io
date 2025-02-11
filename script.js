@@ -204,7 +204,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         const token = localStorage.getItem('access_token');
         if (!token) {
             console.error("No access token found.");
-            alert("Not logged in. Please authenticate with Spotify.");
+            alert("Not logged in. Please authenticate with Spotify by refreshing this page.");
             return;
         }
         
@@ -244,14 +244,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         }
     };
     
-    
-    
-
-
-    
-    
-
-    
 };
 
 function logout() {
@@ -260,15 +252,6 @@ function logout() {
     // Optionally, you could redirect the user to the login screen:
     location.reload();
 }
-
-document.addEventListener('swiped-left', () => {
-    location.reload();
-    restartQrScanner();
-});
-
-
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('start-playback');
@@ -286,46 +269,60 @@ document.addEventListener('DOMContentLoaded', () => {
 function detectSwipe(element, callback) {
     let touchStartX = 0;
     let touchEndX = 0;
+    
+    element.addEventListener('touchstart', function(event) {
+      touchStartX = event.changedTouches[0].screenX;
+    }, false);
+  
+    element.addEventListener('touchend', function(event) {
+      touchEndX = event.changedTouches[0].screenX;
+      const swipeDistance = touchStartX - touchEndX;
+      if (swipeDistance > 50) { // Swiped left
+        callback('left');
+      } else if (swipeDistance < -50) { // Swiped right (falls benötigt)
+        callback('right');
+      }
+    }, false);
+    
+    // Optionale Desktop-Erkennung (Maus):
     let mouseStartX = 0;
     let mouseEndX = 0;
     let isMouseDown = false;
+    
+    element.addEventListener('mousedown', function(event) {
+      isMouseDown = true;
+      mouseStartX = event.screenX;
+    }, false);
+    
+    element.addEventListener('mouseup', function(event) {
+      if (!isMouseDown) return;
+      mouseEndX = event.screenX;
+      const swipeDistance = mouseStartX - mouseEndX;
+      if (swipeDistance > 50) {
+        callback('left');
+      } else if (swipeDistance < -50) {
+        callback('right');
+      }
+      isMouseDown = false;
+    }, false);
+  }
+  
 
-    // Mobile swipe detection
-    element.addEventListener('touchstart', event => {
-        touchStartX = event.changedTouches[0].screenX;
-    });
-
-    element.addEventListener('touchend', event => {
-        touchEndX = event.changedTouches[0].screenX;
-        if (touchStartX - touchEndX > 50) { // Swiped left
-            callback();
+  document.addEventListener('DOMContentLoaded', function() {
+    // Wir registrieren die Swipe-Erkennung an document.body (funktioniert oft zuverlässiger)
+    detectSwipe(document.body, function(direction) {
+      console.log("Swipe detected, direction:", direction);
+      // Falls es sich um einen linken Swipe handelt:
+      if (direction === 'left') {
+        const instruction = document.getElementById('swipe-instruction');
+        if (instruction && instruction.style.display !== 'none') {
+          instruction.style.display = 'none';
+          console.log("Instruction hidden on first swipe.");
+        } else {
+          // Hier kannst du weitere Aktionen definieren, wenn du möchtest.
+          console.log("Subsequent swipe left detected.");
         }
+      }
     });
-
-    // Desktop swipe detection
-    element.addEventListener('mousedown', event => {
-        isMouseDown = true;
-        mouseStartX = event.screenX;
-    });
-
-    element.addEventListener('mouseup', event => {
-        if (isMouseDown) {
-            mouseEndX = event.screenX;
-            if (mouseStartX - mouseEndX > 50) { // Swiped left with mouse
-                callback();
-            }
-        }
-        isMouseDown = false;
-    });
-}
-
-// Attach swipe detection to the whole document
-detectSwipe(document, () => {
-    const instruction = document.getElementById('swipe-instruction');
-    if (instruction && instruction.style.display !== 'none') {
-        instruction.style.display = 'none';
-        console.log("Swipe detected: Instruction hidden.");
-    } else {
-        console.log("Swipe detected.");
-    }
-});
+  });
+  
