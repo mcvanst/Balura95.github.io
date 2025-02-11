@@ -9,12 +9,11 @@ body {
 }
 
 #game-container {
-    width: 90%;
-    max-width: 400px;
-    padding: 20px;
-    margin: 20px auto;
-    border: 2px solid #000;
-    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;  /* Centers vertically */
+    align-items: center;      /* Centers horizontally */
+    text-align: center;       /* Ensures text inside is centered */
 }
 
 @media (max-width: 600px) {
