@@ -155,20 +155,10 @@ async function refreshToken() {
 }
 
 window.onload = () => {
-    getToken(); // Token holen und UI aktualisieren
-    if (localStorage.getItem('access_token')) {
+    getToken();
+    const token = localStorage.getItem('access_token');
+    if (token) {
         toggleUIAfterLogin();
-    }
-
-    // Stop-Button Event-Listener registrieren
-    const stopButton = document.getElementById('stop-button');
-    if (stopButton) {
-        stopButton.addEventListener('click', () => {
-            console.log("Stop button clicked!");
-            stopPlayback();
-        });
-    } else {
-        console.error("Stop button not found.");
     }
 };
 
@@ -234,28 +224,47 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     };
     
 
-    window.stopPlayback = function() {
-        if (!window.deviceId) {
-            console.error("Device ID not set. Cannot stop playback.");
+    window.stopPlayback = async function() {
+        const token = localStorage.getItem('access_token');
+    
+        if (!token) {
+            console.error("No access token found.");
+            alert("Not logged in. Please authenticate with Spotify.");
             return;
         }
     
-        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
+        // Geräte abrufen
+        const response = await fetch("https://api.spotify.com/v1/me/player/devices", {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+    
+        if (!data.devices || data.devices.length === 0) {
+            alert("No active Spotify device found. Open Spotify on your phone or PC.");
+            return;
+        }
+    
+        console.log("Available devices:", data.devices);
+    
+        // Falls kein Webplayer genutzt wird, nehme das erste aktive Gerät
+        let deviceId = window.deviceId || data.devices.find(d => d.is_active)?.id || data.devices[0].id;
+    
+        console.log("Using device:", deviceId);
+    
+        // Wiedergabe stoppen
+        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         }).then(response => {
-            if (response.ok) {
-                console.log("Playback stopped.");
+            if (response.status === 204) {
+                console.log("Playback stopped successfully.");
             } else {
-                console.error("Failed to stop playback:", response);
+                response.json().then(data => console.error("Spotify API error:", data));
             }
         }).catch(error => {
-            console.error("Error stopping playback:", error);
+            console.error("Error sending stop request:", error);
         });
     };
-
     
 };
 
@@ -266,35 +275,13 @@ document.addEventListener('swiped-left', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const stopButton = document.getElementById('stop-button');
     if (stopButton) {
-        stopButton.addEventListener('click', () => {
-            console.log("Stop button clicked!");
-            if (typeof window.stopPlayback === "function") {
-                window.stopPlayback();
-            } else {window.onload = () => {
-                getToken(); // Token holen und UI aktualisieren
-                if (localStorage.getItem('access_token')) {
-                    toggleUIAfterLogin();
-                }
-            
-                // Stop-Button Event-Listener registrieren
-                const stopButton = document.getElementById('stop-button');
-                if (stopButton) {
-                    stopButton.addEventListener('click', () => {
-                        console.log("Stop button clicked!");
-                        stopPlayback();
-                    });
-                } else {
-                    console.error("Stop button not found.");
-                }
-            };
-                console.error("stopPlayback function is not defined.");
-            }
-        });
+        stopButton.removeEventListener('click', stopPlayback); // Vorherige Listener entfernen (falls doppelt)
+        console.log("Stop button clicked!");
+        stopButton.addEventListener('click', stopPlayback);
     } else {
         console.error("Stop button not found in DOM.");
     }
 });
-
 
 document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('start-playback');
