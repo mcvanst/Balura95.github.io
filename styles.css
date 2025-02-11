@@ -26,3 +26,10 @@ body {
         margin: 5px 0;
     }
 }
+
+.card-panel {
+    border-radius: 8px;
+}
+.btn {
+    margin-top: 20px;
+}

@@ -4,26 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hitster Clone</title>
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Your custom stylesheet if any -->
   <link rel="stylesheet" href="styles.css">
-  <script src="script.js" defer></script>
 </head>
 <body>
-  <div id="game-container">
-    
-    <!-- Spotify Login Button -->
-    <div id="login-area">
-        <h1>Bitte unten bei Spotify einloggen</h1>
-        <button id="spotify-login">Login with Spotify</button>
+  <div class="container">
+    <!-- Spotify Login Section -->
+    <div id="login-area" class="card-panel center-align" style="margin-top: 50px;">
+      <h4>Bitte bei Spotify einloggen</h4>
+      <button id="spotify-login" class="btn waves-effect waves-light">Login with Spotify</button>
     </div>
 
-    <!-- You can later hide/show additional elements once the user is logged in -->
+    <!-- Player Section -->
     <div id="player-area" style="display:none;">
+      <div class="card-panel">
         <p>QR-Code scannen, dann auf Play drücken</p>
         <div id="qr-reader" style="width:300px; margin: auto;"></div>
-        <button id="start-playback">Play</button>
-        <button id="pause-play-button">Pause</button>
+        <div class="row" style="margin-top: 20px;">
+          <div class="col s6">
+            <button id="start-playback" class="btn-large waves-effect waves-light">Play</button>
+          </div>
+          <div class="col s6">
+            <!-- If you later add a Pause/Stop functionality -->
+            <!--button id="stop-button" class="btn-large waves-effect waves-light red">Stop</button-->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Materialize JavaScript (dependencies, jQuery is not needed for Materialize 1.0+) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Your script file -->
+  <script src="script.js" defer></script>
+  <!-- Other scripts: html5-qrcode, Spotify Web Playback SDK, etc. -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>

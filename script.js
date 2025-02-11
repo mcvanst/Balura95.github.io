@@ -222,55 +222,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     
     
 
-    window.togglePlayback = async function () {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            console.error("No access token found.");
-            alert("Not logged in. Please authenticate with Spotify.");
-            return;
-        }
-    
-        if (!window.deviceId) {
-            console.error("No active Spotify device found.");
-            alert("No active Spotify device found. Open Spotify on your phone or PC.");
-            return;
-        }
-    
-        try {
-            // Get current playback state
-            const response = await fetch("https://api.spotify.com/v1/me/player", {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-    
-            if (response.status === 204) {
-                console.warn("No active playback session.");
-                alert("No active playback session. Start a song first.");
-                return;
-            }
-    
-            const data = await response.json();
-    
-            if (!data || !data.is_playing) {
-                // Resume playback
-                await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-                });
-                console.log("Playback started/resumed.");
-                document.getElementById('play-pause-button').textContent = "Pause";
-            } else {
-                // Pause playback
-                await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                console.log("Playback paused.");
-                document.getElementById('play-pause-button').textContent = "Play";
-            }
-        } catch (error) {
-            console.error("Error fetching playback state:", error);
-        }
-    };
+
     
     
 
@@ -288,15 +240,7 @@ document.addEventListener('swiped-left', () => {
     location.reload();
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const playPauseButton = document.getElementById('play-pause-button');
-    if (playPauseButton) {
-        playPauseButton.addEventListener('click', window.togglePlayback);
-        alert("Testfail pausebutton")
-    } else {
-        console.error("Play/Pause button not found in DOM.");
-    }
-});
+
 
 
 
