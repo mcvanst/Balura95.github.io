@@ -158,18 +158,7 @@ window.onload = () => {
     getToken(); // Token holen und UI aktualisieren
     if (localStorage.getItem('access_token')) {
         toggleUIAfterLogin();
-    }
-
-    // Stop-Button Event-Listener registrieren
-    const stopButton = document.getElementById('stop-button');
-    if (stopButton) {
-        stopButton.addEventListener('click', () => {
-            console.log("Stop button clicked!");
-            stopPlayback();
-        });
-    } else {
-        console.error("Stop button not found.");
-    }
+    }    
 };
 
 setInterval(refreshToken, 30 * 60 * 1000);
