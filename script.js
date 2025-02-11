@@ -254,31 +254,49 @@ function logout() {
     location.reload();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', logout);
-    }
-});
-
 document.addEventListener('swiped-left', () => {
     location.reload();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const stopButton = document.getElementById('stop-button');
-    if (stopButton) {
-        stopButton.addEventListener('click', () => {
-            console.log("Stop button clicked!");
-            if (typeof window.stopPlayback === "function") {
-                window.stopPlayback();
-            } else {
-                console.error("stopPlayback function is not defined.");
-                alert("Stop function is not available yet. Please wait a moment.");
+    const pausePlayButton = document.getElementById('pause-play-button');
+
+    if (pausePlayButton) {
+        pausePlayButton.addEventListener('click', async () => {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert("Not logged in. Please authenticate with Spotify.");
+                return;
+            }
+
+            try {
+                // Get the current playback state
+                const response = await fetch("https://api.spotify.com/v1/me/player", {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (!data.is_playing) {
+                    // If not playing, resume playback
+                    await fetch("https://api.spotify.com/v1/me/player/play", {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    pausePlayButton.textContent = "Pause";
+                } else {
+                    // If playing, pause playback
+                    await fetch("https://api.spotify.com/v1/me/player/pause", {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    pausePlayButton.textContent = "Play";
+                }
+            } catch (error) {
+                console.error("Error toggling playback:", error);
             }
         });
     } else {
-        console.error("Stop button not found in DOM.");
+        console.error("Pause/Play button not found in DOM.");
     }
 });
 
