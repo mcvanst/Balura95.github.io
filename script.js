@@ -235,26 +235,26 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     
 
     window.stopPlayback = function() {
-    if (!window.deviceId) {
-        console.error("Device ID not set. Cannot stop playback.");
-        return;
-    }
-
-    fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        if (!window.deviceId) {
+            console.error("Device ID not set. Cannot stop playback.");
+            return;
         }
-    }).then(response => {
-        if (response.ok) {
-            console.log("Playback stopped.");
-        } else {
-            console.error("Failed to stop playback:", response);
-        }
-    }).catch(error => {
-        console.error("Error stopping playback:", error);
-    });
-};
+    
+        fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${window.deviceId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log("Playback stopped.");
+            } else {
+                console.error("Failed to stop playback:", response);
+            }
+        }).catch(error => {
+            console.error("Error stopping playback:", error);
+        });
+    };
 
     
 };
