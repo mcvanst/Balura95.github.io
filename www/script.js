@@ -91,6 +91,7 @@ async function authenticateSpotify() {
 function toggleUIAfterLogin() {
     document.getElementById('login-area').style.display = 'none';
     document.getElementById('player-area').style.display = 'block';
+    startQrScanner();  // Start the QR scanner now that the player area is visible.
 }
 
 async function getToken() {
