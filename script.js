@@ -43,6 +43,38 @@ async function generateCodeChallenge(verifier) {
     }
 }
 
+function startQrScanner() {
+    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        console.log('QR Code Scanned:', decodedText);
+        // Remove any spaces and convert URL to Spotify URI if needed:
+        const cleanedText = decodedText.replace(/\s/g, '');
+        const match = cleanedText.match(/open\.spotify\.com\/(?:intl-[a-z]{2}\/)?track\/([a-zA-Z0-9]+)/);
+        if (match && match[1]) {
+            const trackUri = `spotify:track:${match[1]}`;
+            // Optionally, store it for later or directly start playback:
+            window.lastScannedTrackUri = trackUri;
+            alert("Track loaded: " + trackUri);
+            // You can auto-start playback if desired:
+            // window.playTrack(trackUri);
+        } else {
+            console.error("Invalid QR Code scanned: " + cleanedText);
+            alert("Invalid Spotify QR Code. Please scan a valid track URL.");
+        }
+    };
+
+    const qrConfig = { fps: 10, qrbox: 250 };
+
+    // Initialize the HTML5 QR code scanner inside the #qr-reader container:
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrCode.start(
+        { facingMode: "environment" },
+        qrConfig,
+        qrCodeSuccessCallback
+    ).catch(err => {
+        console.error("QR code scanning failed:", err);
+    });
+}
+
 // Start the Spotify authentication process
 async function authenticateSpotify() {
     sessionStorage.clear();
