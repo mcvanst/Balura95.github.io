@@ -272,31 +272,36 @@ function detectSwipe(element, callback) {
     
     element.addEventListener('touchstart', function(event) {
       touchStartX = event.changedTouches[0].screenX;
+      // Debug: log touch start
+      console.log("Touch start:", touchStartX);
     }, false);
   
     element.addEventListener('touchend', function(event) {
       touchEndX = event.changedTouches[0].screenX;
+      console.log("Touch end:", touchEndX);
       const swipeDistance = touchStartX - touchEndX;
       if (swipeDistance > 50) { // Swiped left
         callback('left');
-      } else if (swipeDistance < -50) { // Swiped right (falls benötigt)
+      } else if (swipeDistance < -50) { // Swiped right (if needed)
         callback('right');
       }
     }, false);
-    
-    // Optionale Desktop-Erkennung (Maus):
+  
+    // Optional desktop swipe detection (using mouse)
     let mouseStartX = 0;
     let mouseEndX = 0;
     let isMouseDown = false;
-    
+  
     element.addEventListener('mousedown', function(event) {
       isMouseDown = true;
       mouseStartX = event.screenX;
+      console.log("Mouse start:", mouseStartX);
     }, false);
-    
+  
     element.addEventListener('mouseup', function(event) {
       if (!isMouseDown) return;
       mouseEndX = event.screenX;
+      console.log("Mouse end:", mouseEndX);
       const swipeDistance = mouseStartX - mouseEndX;
       if (swipeDistance > 50) {
         callback('left');
@@ -307,22 +312,25 @@ function detectSwipe(element, callback) {
     }, false);
   }
   
-
+  // Instead of attaching to document, try attaching to your player area
   document.addEventListener('DOMContentLoaded', function() {
-    // Wir registrieren die Swipe-Erkennung an document.body (funktioniert oft zuverlässiger)
-    detectSwipe(document.body, function(direction) {
-      console.log("Swipe detected, direction:", direction);
-      // Falls es sich um einen linken Swipe handelt:
-      if (direction === 'left') {
-        const instruction = document.getElementById('swipe-instruction');
-        if (instruction && instruction.style.display !== 'none') {
-          instruction.style.display = 'none';
-          console.log("Instruction hidden on first swipe.");
-        } else {
-          // Hier kannst du weitere Aktionen definieren, wenn du möchtest.
-          console.log("Subsequent swipe left detected.");
+    const playerArea = document.getElementById('player-area');
+    if (playerArea) {
+      detectSwipe(playerArea, function(direction) {
+        console.log("Swipe detected, direction:", direction);
+        if (direction === 'left') {
+          const instruction = document.getElementById('swipe-instruction');
+          if (instruction && instruction.style.display !== 'none') {
+            instruction.style.display = 'none';
+            console.log("Instruction hidden on first swipe.");
+          } else {
+            console.log("Subsequent swipe left detected.");
+            // If you want to perform other actions, add them here.
+          }
         }
-      }
-    });
+      });
+    } else {
+      console.error("Player area not found for swipe detection.");
+    }
   });
   
