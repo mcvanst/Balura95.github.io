@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hitster Player</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="player.js" defer></script> <!-- We'll create a separate JS file for player-specific logic -->
+</head>
+<body>
+  <div id="player-area">
+    <div id="qr-reader" style="width:300px; margin:auto;"></div>
+    <button id="start-playback" class="btn">Play</button>
+  </div>
+  <!-- Include any external libraries if needed -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+</body>
+</html>

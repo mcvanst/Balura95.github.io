@@ -7,298 +7,132 @@ const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 
 // Attach event listener for the login button after DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const loginButton = document.getElementById('spotify-login');
-    if (loginButton) {
-        loginButton.addEventListener('click', authenticateSpotify);
-    }
+  const loginButton = document.getElementById('spotify-login');
+  if (loginButton) {
+    loginButton.addEventListener('click', authenticateSpotify);
+  }
 });
 
 // Generate a code verifier (random string) for PKCE
 function generateCodeVerifier() {
-    const randomBytes = new Uint8Array(32);
-    window.crypto.getRandomValues(randomBytes);
-    return base64URLEncode(randomBytes);
+  const randomBytes = new Uint8Array(32);
+  window.crypto.getRandomValues(randomBytes);
+  return base64URLEncode(randomBytes);
 }
 
 // Helper: Base64 URL-encode a buffer
 function base64URLEncode(buffer) {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 // Generate the code challenge from the code verifier
 async function generateCodeChallenge(verifier) {
-    if (!verifier) {
-        console.error('Error: Code verifier is missing.');
-        return;
-    }
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    try {
-        const digest = await crypto.subtle.digest('SHA-256', data);
-        return base64URLEncode(digest);
-    } catch (error) {
-        console.error('Error generating code challenge:', error);
-    }
-}
-
-function startQrScanner() {
-    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-        console.log('QR Code Scanned:', decodedText);
-        // Remove any spaces and convert URL to Spotify URI if needed:
-        const cleanedText = decodedText.replace(/\s/g, '');
-        const match = cleanedText.match(/open\.spotify\.com\/(?:intl-[a-z]{2}\/)?track\/([a-zA-Z0-9]+)/);
-        if (match && match[1]) {
-            const trackUri = `spotify:track:${match[1]}`;
-            // Optionally, store it for later or directly start playback:
-            window.lastScannedTrackUri = trackUri;
-            alert("Track loaded: " + trackUri);
-            // You can auto-start playback if desired:
-            window.playTrack(trackUri);
-        } else {
-            console.error("Invalid QR Code scanned: " + cleanedText);
-            alert("Invalid Spotify QR Code. Please scan a valid track URL.");
-        }
-    };
-
-    const qrConfig = { fps: 10, qrbox: 250 };
-
-    // Initialize the HTML5 QR code scanner inside the #qr-reader container:
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    html5QrCode.start(
-        { facingMode: "environment" },
-        qrConfig,
-        qrCodeSuccessCallback
-    ).catch(err => {
-        console.error("QR code scanning failed:", err);
-    });
+  if (!verifier) {
+    console.error('Error: Code verifier is missing.');
+    return;
+  }
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return base64URLEncode(digest);
+  } catch (error) {
+    console.error('Error generating code challenge:', error);
+  }
 }
 
 // Start the Spotify authentication process
 async function authenticateSpotify() {
-    sessionStorage.clear();
-    localStorage.clear();
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    sessionStorage.setItem('code_verifier', codeVerifier);
+  // Clear any previous data
+  sessionStorage.clear();
+  localStorage.clear();
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  sessionStorage.setItem('code_verifier', codeVerifier);
+
+  const authUrl = `${AUTH_URL}?client_id=${CLIENT_ID}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&scope=${encodeURIComponent(SCOPES)}` +
+    `&code_challenge_method=S256` +
+    `&code_challenge=${codeChallenge}`;
     
-    const authUrl = `${AUTH_URL}?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
-    window.location.href = authUrl;
+  window.location.href = authUrl;
 }
 
-// === Token Exchange & UI Toggling ===
-function toggleUIAfterLogin() {
-    document.getElementById('login-area').style.display = 'none';
-    document.getElementById('player-area').style.display = 'block';
-    startQrScanner();  // Start the QR scanner now that the player area is visible.
-}
-
+// === Token Exchange ===
+// This function exchanges the authorization code for tokens.
+// Upon success, it stores the tokens and then redirects to player.html.
 async function getToken() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const codeVerifier = sessionStorage.getItem('code_verifier');
-    if (!code || !codeVerifier) return;
-    
-    const body = new URLSearchParams({
-        client_id: CLIENT_ID,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: REDIRECT_URI,
-        code_verifier: codeVerifier
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const codeVerifier = sessionStorage.getItem('code_verifier');
+  if (!code || !codeVerifier) return;
+  
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: codeVerifier
+  });
+  
+  try {
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
     });
-    
-    try {
-        const response = await fetch(TOKEN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body
-        });
-        const data = await response.json();
-
-        if (data.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('refresh_token', data.refresh_token);
-            window.history.replaceState({}, document.title, '/');
-            toggleUIAfterLogin();
-        } else {
-            console.error('Invalid token response:', data);
-        }
-    } catch (error) {
-        console.error('Error fetching token:', error);
+    const data = await response.json();
+    if (data.access_token) {
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      // Clear the URL query parameters for a cleaner URL.
+      window.history.replaceState({}, document.title, '/');
+      // Redirect to the player page
+      window.location.href = 'player.html';
+    } else {
+      console.error('Invalid token response:', data);
     }
+  } catch (error) {
+    console.error('Error fetching token:', error);
+  }
 }
 
+// Refresh token (if needed)
 async function refreshToken() {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) return;
-    
-    const body = new URLSearchParams({
-        client_id: CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) return;
+  
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken
+  });
+  
+  try {
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
     });
-    
-    try {
-        const response = await fetch(TOKEN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body
-        });
-        const data = await response.json();
-        if (data.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-        }
-    } catch (error) {
-        console.error('Error refreshing token:', error);
+    const data = await response.json();
+    if (data.access_token) {
+      localStorage.setItem('access_token', data.access_token);
     }
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+  }
 }
 
+// On page load, try to exchange the code for a token.
+// If a token already exists, redirect immediately.
 window.onload = () => {
-    getToken(); // Token holen und UI aktualisieren
-    if (localStorage.getItem('access_token')) {
-        toggleUIAfterLogin();
-    }
-
+  getToken();
+  if (localStorage.getItem('access_token')) {
+    window.location.href = 'player.html';
+  }
 };
 
 setInterval(refreshToken, 30 * 60 * 1000);
-
-// === Spotify Web Playback SDK Integration ===
-window.deviceId = null;
-window.onSpotifyWebPlaybackSDKReady = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-    
-    const player = new Spotify.Player({
-        name: 'Web Player',
-        getOAuthToken: cb => { cb(token); }
-    });
-    
-    player.addListener('ready', ({ device_id }) => {
-        window.deviceId = device_id;
-    });
-    player.connect();
-
-    window.playTrack = async function(trackUri) {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            console.error("No access token found.");
-            alert("Not logged in. Please authenticate with Spotify.");
-            return;
-        }
-        
-        // Warte bis zu 10 Sekunden auf die deviceId
-        let waitTime = 0;
-        while (!window.deviceId && waitTime < 10000) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-            waitTime += 200;
-        }
-        if (!window.deviceId) {
-            alert("Spotify player is not ready yet. Please wait a moment and try again.");
-            return;
-        }
-        
-        // Jetzt starten wir die Wiedergabe
-        try {
-            let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-                method: 'PUT',
-                body: JSON.stringify({ uris: [trackUri] }),
-                headers: { 
-                    'Authorization': `Bearer ${token}`, 
-                    'Content-Type': 'application/json' 
-                }
-            });
-            if (response.status === 204) {
-                console.log("Track started successfully.");
-            } else if (response.status === 401) {
-                console.error("Access token expired or invalid.");
-                alert("Session expired. Logging out...");
-                logout();
-            } else {
-                const data = await response.json();
-                console.error("Spotify API error:", data);
-            }
-        } catch (error) {
-            console.error("Error sending play request:", error);
-        }
-    };
-    
-    
-    
-
-
-    
-    
-
-    
-};
-
-function logout() {
-    localStorage.clear();
-    sessionStorage.clear();
-    // Optionally, you could redirect the user to the login screen:
-    location.reload();
-}
-
-document.addEventListener('swiped-left', () => {
-    location.reload();
-});
-
-
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    const playButton = document.getElementById('start-playback');
-    if (playButton) {
-        playButton.addEventListener('click', () => {
-            if (window.lastScannedTrackUri) {
-                window.playTrack(window.lastScannedTrackUri);
-            } else {
-                alert("No track loaded. Please scan a QR code first.");
-            }
-        });
-    }
-});
-
-function detectSwipe(element, callback) {
-    let touchStartX = 0;
-    let touchEndX = 0;
-    let mouseStartX = 0;
-    let mouseEndX = 0;
-    let isMouseDown = false;
-
-    // Mobile swipe detection
-    element.addEventListener('touchstart', event => {
-        touchStartX = event.changedTouches[0].screenX;
-    });
-
-    element.addEventListener('touchend', event => {
-        touchEndX = event.changedTouches[0].screenX;
-        if (touchStartX - touchEndX > 50) { // Swiped left
-            callback();
-        }
-    });
-
-    // Desktop swipe detection
-    element.addEventListener('mousedown', event => {
-        isMouseDown = true;
-        mouseStartX = event.screenX;
-    });
-
-    element.addEventListener('mouseup', event => {
-        if (isMouseDown) {
-            mouseEndX = event.screenX;
-            if (mouseStartX - mouseEndX > 50) { // Swiped left with mouse
-                callback();
-            }
-        }
-        isMouseDown = false;
-    });
-}
-
-// Attach swipe detection to the whole document; reloads page to scan a new song.
-detectSwipe(document, () => {
-    location.reload();
-});
