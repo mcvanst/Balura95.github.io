@@ -23,7 +23,7 @@ window.onload = () => {
     window.qrScanner = new Html5Qrcode("qr-reader");
     window.qrScannerActive = true;
     document.getElementById('qr-reader').style.display = 'block';
-    document.getElementById('start-playback').style.display = 'none'; 
+    document.getElementById('title').style.display = 'block';
     document.getElementById('scan-next').style.display = 'none'; 
   
     const qrConfig = { fps: 10, qrbox: 250 };
@@ -54,6 +54,7 @@ window.onload = () => {
       window.qrScanner.stop().then(() => {
         window.qrScannerActive = false;
         document.getElementById('qr-reader').style.display = 'none';
+        document.getElementById('title').style.display = 'none';
         document.getElementById('scan-next').style.display = 'block'; 
       }).catch(err => console.error("Error stopping QR scanner:", err));
     }
@@ -73,7 +74,6 @@ window.onload = () => {
   
     player.addListener('ready', ({ device_id }) => {
       window.deviceId = device_id;
-      document.getElementById('start-playback').disabled = false;
     });
     
     player.connect();
@@ -108,7 +108,6 @@ window.onload = () => {
   
         if (response.status === 204) {
           console.log("Track started successfully.");
-          document.getElementById('start-playback').style.display = 'none';
           document.getElementById('scan-next').style.display = 'block'; 
         } else if (response.status === 401) {
           alert("Session expired. Logging out...");
@@ -149,14 +148,6 @@ window.onload = () => {
   
   // --- Event Listeners ---
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('start-playback').addEventListener('click', () => {
-      if (window.lastScannedTrackUri) {
-        window.playTrack(window.lastScannedTrackUri);
-      } else {
-        alert("No track loaded. Scan a QR code first.");
-      }
-    });
-  
     document.getElementById('scan-next').addEventListener('click', () => {
       window.stopPlayback(); // Stop current song before scanning a new one
       startQrScanner();
