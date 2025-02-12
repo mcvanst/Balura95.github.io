@@ -34,13 +34,11 @@ body {
   }
   
   /* QR Code scanner box styling */
-  .qr-box {
-    width: 300px;
-    height: 300px;
-    margin: 0 auto 20px auto;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
+  #qr-reader {
+    margin: 20px auto;
+    /* No width, height, or border – just let the library do its thing */
   }
+  
   
   /* Button styling */
   .btn {
