@@ -14,7 +14,7 @@ body {
 
 /* Container for the app content */
 .container {
-    width: 90%;
+    width: auto;
     max-width: 400px;
     margin: 20px auto;
 }
@@ -36,14 +36,14 @@ body {
 /* Player Area styling (for player.html) */
 #player-area {
     background: #ffffff;
-    padding: 20px;
+    padding: auto;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 /* QR Code Scanner container */
 #qr-reader {
-    margin: 20px auto;
+    margin: auto;
     max-width: 300px;
     /* Remove fixed height or border if not needed to let the library adjust */
 }
