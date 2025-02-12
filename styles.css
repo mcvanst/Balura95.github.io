@@ -49,7 +49,9 @@ body {
 
 /* Buttons: General styling */
 .btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     padding: 12px;
     font-size: 1em;
@@ -61,6 +63,9 @@ body {
     margin: 10px 0;
     box-sizing: border-box;
     transition: background-color 0.3s ease;
+    height: 45px; /* Falls nötig, um Einheitlichkeit zu gewährleisten */
+    line-height: normal; /* Falls line-height stören sollte */
+    text-align: center;
 }
 
 .btn:hover {
