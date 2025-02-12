@@ -38,11 +38,12 @@ window.onload = () => {
         if (match && match[1]) {
           const trackUri = `spotify:track:${match[1]}`;
           window.lastScannedTrackUri = trackUri;
-          alert("Track loaded: " + trackUri);
+          M.toast({html: "Track loaded: " + trackUri, classes: "rounded"});
           stopQrScanner();
           window.playTrack(trackUri);
         } else {
           alert("Invalid Spotify QR Code. Try again.");
+          M.toast({html: "Invalid Spotify QR Code. Try again.", classes: "rounded"});
         }
       }
     ).catch(err => console.error("QR code scanning failed:", err));
@@ -81,7 +82,7 @@ window.onload = () => {
     window.playTrack = async function(trackUri) {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        alert("Session expired. Please log in again.");
+        M.toast({html: "Session expired. Please log in again.", classes: "rounded"});
         logout();
         return;
       }
@@ -92,7 +93,7 @@ window.onload = () => {
         waitTime += 200;
       }
       if (!window.deviceId) {
-        alert("Spotify player is not ready yet. Try again soon.");
+        M.toast({html: "Spotify player is not ready yet. Try again soon.", classes: "rounded"});
         return;
       }
       
@@ -110,7 +111,7 @@ window.onload = () => {
           console.log("Track started successfully.");
           document.getElementById('scan-next').style.display = 'block'; 
         } else if (response.status === 401) {
-          alert("Session expired. Logging out...");
+          M.toast({html: "Session expired. Logging out...", classes: "rounded"});
           logout();
         } else {
           const data = await response.json();
