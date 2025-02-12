@@ -23,7 +23,7 @@ window.onload = () => {
     window.qrScanner = new Html5Qrcode("qr-reader");
     window.qrScannerActive = true;
     document.getElementById('qr-reader').style.display = 'block';
-    document.getElementById('title').style.display = 'block';
+    document.getElementById('title').textContent = 'QR Code scannen';
     document.getElementById('scan-next').style.display = 'none'; 
   
     const qrConfig = { fps: 10, qrbox: 250 };
@@ -54,7 +54,7 @@ window.onload = () => {
       window.qrScanner.stop().then(() => {
         window.qrScannerActive = false;
         document.getElementById('qr-reader').style.display = 'none';
-        document.getElementById('title').style.display = 'none';
+        document.getElementById('title').textContent = 'Song läuft...';
         document.getElementById('scan-next').style.display = 'block'; 
       }).catch(err => console.error("Error stopping QR scanner:", err));
     }
