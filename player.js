@@ -39,8 +39,8 @@ window.onload = () => {
           const trackUri = `spotify:track:${match[1]}`;
           window.lastScannedTrackUri = trackUri;
           alert("Track loaded: " + trackUri);
+          stopQrScanner();
           window.playTrack(trackUri);
-          stopQrScanner(); // Stop scanner after scanning
         } else {
           alert("Invalid Spotify QR Code. Try again.");
         }
@@ -121,6 +121,30 @@ window.onload = () => {
         console.error("Error playing track:", error);
       }
     };
+  
+    // --- STOP Current Playback Function ---
+    window.stopPlayback = async function() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+  
+      try {
+        let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
+          method: 'PUT',
+          headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+          }
+        });
+  
+        if (response.status === 204) {
+          console.log("Playback stopped.");
+        } else {
+          console.error("Error stopping playback:", await response.json());
+        }
+      } catch (error) {
+        console.error("Error stopping track:", error);
+      }
+    };
   };
   
   // --- Event Listeners ---
@@ -133,7 +157,10 @@ window.onload = () => {
       }
     });
   
-    document.getElementById('scan-next').addEventListener('click', startQrScanner);
+    document.getElementById('scan-next').addEventListener('click', () => {
+      window.stopPlayback(); // Stop current song before scanning a new one
+      startQrScanner();
+    });
   });
   
   // --- Logout Function ---
