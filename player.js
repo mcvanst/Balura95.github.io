@@ -165,8 +165,21 @@ window.onload = () => {
   
   // --- Logout Function ---
   function logout() {
+    // Clear stored tokens and any cached data.
     localStorage.clear();
     sessionStorage.clear();
+    // Redirect to the login page (adjust the URL as needed)
     window.location.href = 'index.html';
   }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const resetButton = document.getElementById('reset-app');
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
+          logout();
+        }
+      });
+    }
+  });
   
