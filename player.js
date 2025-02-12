@@ -38,7 +38,7 @@ window.onload = () => {
         if (match && match[1]) {
           const trackUri = `spotify:track:${match[1]}`;
           window.lastScannedTrackUri = trackUri;
-          M.toast({html: "Track loaded: " + trackUri, classes: "rounded"});
+          M.toast({html: "Track loaded", classes: "rounded"});
           stopQrScanner();
           window.playTrack(trackUri);
         } else {
