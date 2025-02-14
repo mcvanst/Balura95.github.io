@@ -56,13 +56,18 @@ window.addEventListener('focus', () => {
 });
 
 document.addEventListener('deviceready', function() {
+  console.log('Device ready: InAppBrowser is available');
+  
   document.addEventListener('click', function(event) {
-    // Suche den nächsten <a>-Elternteil, falls der direkte Target nicht <a> ist
+    // Ermittle das nächste <a>-Element, falls ein inneres Element geklickt wurde.
     var anchor = event.target.closest('a');
+    
     if (anchor && anchor.href && anchor.href.startsWith('http')) {
-      event.preventDefault(); // Standardverhalten verhindern
-      // Öffne den Link in der gleichen WebView
-      cordova.InAppBrowser.open(anchor.href, '_self', 'location=no');
+      event.preventDefault();
+      console.log('Intercepted link:', anchor.href);
+      
+      // Öffne den Link in einer InAppBrowser-Instanz
+      window.open(anchor.href, '_blank', 'location=no');
     }
   }, false);
-}, false);
+});
