@@ -71,3 +71,39 @@ document.addEventListener('deviceready', function() {
     }
   }, false);
 });
+
+function handleOpenURL(url) {
+  // Oft ist ein kleiner Delay sinnvoll, um sicherzustellen, dass die App initialisiert ist.
+  setTimeout(function() {
+    console.log("handleOpenURL aufgerufen mit URL:", url);
+
+    // Extrahiere den "code"-Parameter aus der URL.
+    var code = extractCodeFromUrl(url);
+    if (code) {
+      // Hier kannst du den Code verarbeiten – z.B. den Token-Austausch starten.
+      processSpotifyCallback(code);
+    } else {
+      console.warn("Kein Code in der URL gefunden.");
+    }
+  }, 0);
+}
+
+// Hilfsfunktion: Extrahiert den "code" Parameter aus der URL.
+function extractCodeFromUrl(url) {
+  try {
+    var urlObj = new URL(url);
+    return urlObj.searchParams.get("code");
+  } catch (e) {
+    console.error("Fehler beim Parsen der URL:", e);
+    return null;
+  }
+}
+
+// Beispiel: Verarbeite den Auth-Code und starte den Token-Austausch.
+// Passe diese Funktion an deine existierende Logik an.
+function processSpotifyCallback(code) {
+  console.log("Spotify-Callback-Code:", code);
+  // Hier kannst du z.B. deine getToken()-Funktion aufrufen oder den weiteren Authentifizierungsfluss einleiten.
+  // Beispiel:
+  // getToken(code);
+}
