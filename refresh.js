@@ -107,3 +107,39 @@ function processSpotifyCallback(code) {
   // Beispiel:
   // getToken(code);
 }
+
+async function getTokenWithCode(code) {
+  const codeVerifier = sessionStorage.getItem('code_verifier');
+  if (!code || !codeVerifier) {
+    console.error('Fehlender Code oder Code Verifier.');
+    return;
+  }
+
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: REDIRECT_URI, // muss ebenfalls angepasst sein, also "shitster://callback"
+    code_verifier: codeVerifier
+  });
+
+  try {
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    const data = await response.json();
+    if (data.access_token) {
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      console.log('Token erfolgreich erhalten.');
+      // Leite zur Player-Seite weiter
+      window.location.href = 'player.html';
+    } else {
+      console.error('Token-Austausch fehlgeschlagen:', data);
+    }
+  } catch (error) {
+    console.error('Fehler beim Token-Austausch:', error);
+  }
+}

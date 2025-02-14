@@ -129,10 +129,16 @@ async function refreshToken() {
 // On page load, try to exchange the code for a token.
 // If a token already exists, redirect immediately.
 window.onload = () => {
-  getToken();
-  if (localStorage.getItem('access_token')) {
+  // Wenn der URL-Parameter "code" nicht existiert, bleibe auf der Login-Seite
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (code) {
+    // Falls doch ein Code per URL vorhanden ist, verarbeite ihn
+    getTokenWithCode(code);
+  } else if (localStorage.getItem('access_token')) {
     window.location.href = 'player.html';
   }
 };
+
 
 setInterval(refreshToken, 30 * 60 * 1000);
