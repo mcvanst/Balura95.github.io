@@ -103,9 +103,7 @@ function extractCodeFromUrl(url) {
 // Passe diese Funktion an deine existierende Logik an.
 function processSpotifyCallback(code) {
   console.log("Spotify-Callback-Code:", code);
-  // Hier kannst du z.B. deine getToken()-Funktion aufrufen oder den weiteren Authentifizierungsfluss einleiten.
-  // Beispiel:
-  // getToken(code);
+  getTokenWithCode(code);
 }
 
 async function getTokenWithCode(code) {
