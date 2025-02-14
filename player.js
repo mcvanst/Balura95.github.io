@@ -174,3 +174,45 @@ window.onload = () => {
     }
   });
   
+  async function refreshToken() {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) return;
+    
+    const body = new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    });
+    
+    try {
+      const response = await fetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem('access_token', data.access_token);
+      }
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+    }
+  }
+  
+  // On page load, try to exchange the code for a token.
+  // If a token already exists, redirect immediately.
+  window.onload = () => {
+    getToken();
+    if (localStorage.getItem('access_token')) {
+      window.location.href = 'player.html';
+    }
+  };
+  
+  setInterval(refreshToken, 30 * 60 * 1000);
+  
+  // Wenn der Tab wieder sichtbar wird, den Access Token sofort aktualisieren
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshToken();
+    }
+  });

@@ -316,7 +316,7 @@ def draw_cards_on_page(image_files, c, cols, rows, card_width, card_height, h_sp
 # PDF erstellen (Vorder- und Rückseiten)
 # =========================================
 
-pdf_filename = "playlist_cards_optimiert2.pdf"
+pdf_filename = "playing_cards.pdf"
 if os.path.exists(pdf_filename):
     os.remove(pdf_filename)
 
