@@ -17,8 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateCodeVerifier() {
   const randomBytes = new Uint8Array(32);
   window.crypto.getRandomValues(randomBytes);
-  return base64URLEncode(randomBytes);
+  const verifier = base64URLEncode(randomBytes);
+  // Speichere den Verifier in sessionStorage UND localStorage
+  sessionStorage.setItem('code_verifier', verifier);
+  localStorage.setItem('code_verifier', verifier);
+  return verifier;
 }
+
 
 // Helper: Base64 URL-encode a buffer
 function base64URLEncode(buffer) {

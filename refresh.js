@@ -99,15 +99,10 @@ function extractCodeFromUrl(url) {
   }
 }
 
-// Beispiel: Verarbeite den Auth-Code und starte den Token-Austausch.
-// Passe diese Funktion an deine existierende Logik an.
-function processSpotifyCallback(code) {
-  console.log("Spotify-Callback-Code:", code);
-  getTokenWithCode(code);
-}
+
 
 async function getTokenWithCode(code) {
-  const codeVerifier = sessionStorage.getItem('code_verifier');
+  const codeVerifier = sessionStorage.getItem('code_verifier') || localStorage.getItem('code_verifier');
   if (!code || !codeVerifier) {
     console.error('Fehlender Code oder Code Verifier.');
     return;
@@ -117,7 +112,7 @@ async function getTokenWithCode(code) {
     client_id: CLIENT_ID,
     grant_type: 'authorization_code',
     code: code,
-    redirect_uri: REDIRECT_URI, // muss ebenfalls angepasst sein, also "shitster://callback"
+    redirect_uri: REDIRECT_URI, // muss "shitster://callback" sein
     code_verifier: codeVerifier
   });
 
@@ -140,4 +135,11 @@ async function getTokenWithCode(code) {
   } catch (error) {
     console.error('Fehler beim Token-Austausch:', error);
   }
+}
+
+// Beispiel: Verarbeite den Auth-Code und starte den Token-Austausch.
+// Passe diese Funktion an deine existierende Logik an.
+function processSpotifyCallback(code) {
+  console.log("Spotify-Callback-Code:", code);
+  getTokenWithCode(code);
 }
