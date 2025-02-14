@@ -2,7 +2,6 @@
 setInterval(refreshToken, 30 * 60 * 1000);
 
 // --- Neuer Code: Token sofort erneuern, wenn der Tab wieder aktiv wird ---
-
 async function refreshToken() {
     // Hole den gespeicherten Refresh-Token aus dem localStorage
     const refreshToken = localStorage.getItem('refresh_token');
@@ -40,21 +39,20 @@ async function refreshToken() {
     } catch (error) {
       console.error('Fehler beim Aktualisieren des Tokens:', error);
     }
-  }
+}
   
-
 // Wenn der Tab wieder sichtbar wird, den Access Token sofort aktualisieren
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     refreshToken();
   }
 });
-
+  
 // Alternativ kann auch das Fenster-Fokus-Ereignis genutzt werden:
 window.addEventListener('focus', () => {
   refreshToken();
 });
-
+  
 document.addEventListener('deviceready', function() {
   console.log('Device ready: InAppBrowser is available');
   
@@ -66,80 +64,12 @@ document.addEventListener('deviceready', function() {
       event.preventDefault();
       console.log('Intercepted link:', anchor.href);
       
-      // Verwende window.open, das vom InAppBrowser-Plugin überschrieben wurde.
+      // Öffne den Link im selben Fenster (Browser)
       window.open(anchor.href, '_self', 'location=no');
     }
   }, false);
 });
-
-function handleOpenURL(url) {
-  // Oft ist ein kleiner Delay sinnvoll, um sicherzustellen, dass die App initialisiert ist.
-  setTimeout(function() {
-    console.log("handleOpenURL aufgerufen mit URL:", url);
-
-    // Extrahiere den "code"-Parameter aus der URL.
-    var code = extractCodeFromUrl(url);
-    if (code) {
-      // Hier kannst du den Code verarbeiten – z.B. den Token-Austausch starten.
-      processSpotifyCallback(code);
-    } else {
-      console.warn("Kein Code in der URL gefunden.");
-    }
-  }, 0);
-}
-
-// Hilfsfunktion: Extrahiert den "code" Parameter aus der URL.
-function extractCodeFromUrl(url) {
-  try {
-    var urlObj = new URL(url);
-    return urlObj.searchParams.get("code");
-  } catch (e) {
-    console.error("Fehler beim Parsen der URL:", e);
-    return null;
-  }
-}
-
-
-
-async function getTokenWithCode(code) {
-  const codeVerifier = sessionStorage.getItem('code_verifier') || localStorage.getItem('code_verifier');
-  if (!code || !codeVerifier) {
-    console.error('Fehlender Code oder Code Verifier.');
-    return;
-  }
-
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: 'authorization_code',
-    code: code,
-    redirect_uri: REDIRECT_URI, // muss "shitster://callback" sein
-    code_verifier: codeVerifier
-  });
-
-  try {
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
-    });
-    const data = await response.json();
-    if (data.access_token) {
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      console.log('Token erfolgreich erhalten.');
-      // Leite zur Player-Seite weiter
-      window.location.href = 'player.html';
-    } else {
-      console.error('Token-Austausch fehlgeschlagen:', data);
-    }
-  } catch (error) {
-    console.error('Fehler beim Token-Austausch:', error);
-  }
-}
-
-// Beispiel: Verarbeite den Auth-Code und starte den Token-Austausch.
-// Passe diese Funktion an deine existierende Logik an.
-function processSpotifyCallback(code) {
-  console.log("Spotify-Callback-Code:", code);
-  getTokenWithCode(code);
-}
+  
+// Entferne hier alle Funktionen zum Custom URL Scheme:
+// handleOpenURL(), extractCodeFromUrl(), processSpotifyCallback(), getTokenWithCode()
+// (Diese werden im Browser nicht benötigt)

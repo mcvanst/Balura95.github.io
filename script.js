@@ -1,6 +1,6 @@
 // === Spotify Authentication & PKCE Setup ===
 const CLIENT_ID = '85528d9ddff344ebba781615c218d339';
-const REDIRECT_URI = 'https://balura95.github.io'; // Must match exactly in your Spotify Developer Dashboard
+const REDIRECT_URI = 'https://balura95.github.io'; // Zurück auf den Browser-Redirect
 const SCOPES = 'user-read-playback-state user-modify-playback-state streaming user-read-email user-read-private';
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
@@ -17,13 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateCodeVerifier() {
   const randomBytes = new Uint8Array(32);
   window.crypto.getRandomValues(randomBytes);
-  const verifier = base64URLEncode(randomBytes);
-  // Speichere den Verifier in sessionStorage UND localStorage
-  sessionStorage.setItem('code_verifier', verifier);
-  localStorage.setItem('code_verifier', verifier);
-  return verifier;
+  return base64URLEncode(randomBytes);
 }
-
 
 // Helper: Base64 URL-encode a buffer
 function base64URLEncode(buffer) {
@@ -105,45 +100,16 @@ async function getToken() {
   }
 }
 
-// Refresh token (if needed)
-async function refreshToken() {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) return;
-  
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken
-  });
-  
-  try {
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body
-    });
-    const data = await response.json();
-    if (data.access_token) {
-      localStorage.setItem('access_token', data.access_token);
-    }
-  } catch (error) {
-    console.error('Error refreshing token:', error);
-  }
-}
-
 // On page load, try to exchange the code for a token.
 // If a token already exists, redirect immediately.
 window.onload = () => {
-  // Wenn der URL-Parameter "code" nicht existiert, bleibe auf der Login-Seite
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
   if (code) {
-    // Falls doch ein Code per URL vorhanden ist, verarbeite ihn
-    getTokenWithCode(code);
+    getToken();
   } else if (localStorage.getItem('access_token')) {
     window.location.href = 'player.html';
   }
 };
-
 
 setInterval(refreshToken, 30 * 60 * 1000);
