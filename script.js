@@ -136,10 +136,3 @@ window.onload = () => {
 };
 
 setInterval(refreshToken, 30 * 60 * 1000);
-
-// Wenn der Tab wieder sichtbar wird, den Access Token sofort aktualisieren
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    refreshToken();
-  }
-});
