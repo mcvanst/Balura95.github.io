@@ -23,7 +23,7 @@ window.onload = () => {
     window.qrScanner = new Html5Qrcode("qr-reader");
     window.qrScannerActive = true;
     document.getElementById('qr-reader').style.display = 'block';
-    document.getElementById('title').textContent = 'QR Code cint';
+    document.getElementById('title').textContent = 'QR Code scannen';
     document.getElementById('scan-next').style.display = 'none'; 
   
     const qrConfig = { fps: 10, qrbox: 250 };
