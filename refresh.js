@@ -54,3 +54,14 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('focus', () => {
   refreshToken();
 });
+
+document.addEventListener('click', function(event) {
+  // Prüfen, ob ein Link angeklickt wurde
+  var target = event.target;
+  // Wenn das geklickte Element ein <a>-Tag ist und ein http/https Link enthält
+  if (target.tagName === 'A' && target.href && target.href.startsWith('http')) {
+    event.preventDefault(); // Verhindere das Standardverhalten
+    // Öffne den Link in der gleichen WebView (innerhalb der App)
+    cordova.InAppBrowser.open(target.href, '_self', 'location=no');
+  }
+});
