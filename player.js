@@ -1,11 +1,13 @@
 // --- Player Page Initialization ---
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("Access Token:", localStorage.getItem('access_token'));
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
   toggleUIAfterLogin();
-};
+});
+
 
 // Function to show the player area and start the QR scanner
 function toggleUIAfterLogin() {
