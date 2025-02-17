@@ -37,7 +37,9 @@ body {
     justify-content: center;
     gap: 8px;
     width: 100%;
-    padding: 12px 20px;
+    height: 45px;           /* feste Höhe */
+    line-height: 45px;      /* sorgt dafür, dass der Text vertikal zentriert wird */
+    padding: 0 20px;        /* horizontale Padding, vertikales Padding entfällt wegen der fixen Höhe */
     font-size: 1.1rem;
     background-color: #2196F3;
     color: #fff;
@@ -51,6 +53,7 @@ body {
   .btn-large:hover {
     background-color: #1976D2;
   }
+  
   
   /* Reset Button: Fixiert in der Mitte am unteren Rand */
   .reset-btn {
