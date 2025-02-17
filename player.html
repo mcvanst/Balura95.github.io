@@ -11,6 +11,13 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- Externe Skripte: Diese werden jetzt im Head geladen -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  
+  <!-- Materialize JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -34,13 +41,8 @@
     </div>
   </div>
 
-  <!-- Materialize JavaScript -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <!-- Player-Skripte -->
+  <!-- Eigene Skripte: Werden jetzt nach den externen Bibliotheken geladen -->
   <script src="player.js" defer></script>
   <script src="refresh.js" defer></script>
-  <!-- Externe Skripte -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>
