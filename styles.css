@@ -28,6 +28,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     padding: 20px;
+    margin: 0 !important;
   }
   
   /* Button Large (für Scan-Next) */
@@ -86,6 +87,18 @@ body {
     opacity: 0;
   }
   
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+  }
+  .col {
+    padding: 0 !important;
+  }
+  
+
   @keyframes fadeIn {
     to { opacity: 1; }
   }
