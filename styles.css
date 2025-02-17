@@ -3,13 +3,13 @@ body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #f5f7fa, #c3cfe2); /* Sanfter, heller Farbverlauf */
+    /* Spannender, aber dezenter Farbverlauf */
+    background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    min-height: 100vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 100vh;
   }
   
   /* Container for the app content */
@@ -17,18 +17,19 @@ body {
     width: 90%;
     max-width: 400px;
     margin: 20px auto;
-    background: rgba(255, 255, 255, 0.95); /* Leicht transparenter, heller Hintergrund */
-    border-radius: 12px;  /* Runde Ecken für sanftere Kanten */
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 12px;        /* Sanfte, abgerundete Ecken */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Weicher Schatten */
     padding: 20px;
   }
   
   /* Login Button: Angepasst für mobile Geräte */
   #spotify-login {
-    display: inline-flex;       /* Inline-Flexbox, um Icon und Text nebeneinander auszurichten */
+    display: inline-flex;       /* Icon und Text nebeneinander */
     align-items: center;
     justify-content: center;
     gap: 8px;                   /* Abstand zwischen Icon und Text */
+    width: 100%;                /* Button füllt den Container, aber nicht darüber hinaus */
     padding: 12px 20px;
     font-size: 1.1rem;
     background-color: #2196F3;
@@ -36,24 +37,17 @@ body {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    white-space: nowrap;        /* Verhindert Zeilenumbruch */
+    white-space: nowrap;        /* Kein Zeilenumbruch */
+    box-sizing: border-box;     /* Sorgt dafür, dass Padding in der Breite berücksichtigt wird */
   }
   
-  /* Icon im Button */
-  #spotify-login .material-icons {
+  /* Icon im Button (Material Icons) */
+  #spotify-login .material-icons.left {
     font-size: 1.5rem;
     vertical-align: middle;
   }
   
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    .container {
-      width: 95%;
-      margin: 10px auto;
-    }
-  }
-  
-  /* Optional: Fade-In Animation */
+  /* Fade-In Animation für den Card-Bereich */
   .fade-in {
     animation: fadeIn 1s ease-out forwards;
     opacity: 0;
@@ -61,5 +55,13 @@ body {
   
   @keyframes fadeIn {
     to { opacity: 1; }
+  }
+  
+  /* Responsive Anpassungen */
+  @media (max-width: 600px) {
+    .container {
+      width: 95%;
+      margin: 10px auto;
+    }
   }
   
