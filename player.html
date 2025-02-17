@@ -1,23 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hitster Player</title>
+  <title>Shitster Player</title>
+  <!-- Materialize CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Google Fonts & Material Icons -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script src="player.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <h1 class="title" id="title">QR Code scannen</h1>
-        <div id="player-area" class="card">
-          <div id="qr-reader" class="qr-box"></div>
-          <button id="scan-next" class="btn secondary" style="display:none;">Nächsten Song scannen</button>
-          <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
+  <div class="container">
+    <div class="row">
+      <div class="col s12">
+        <!-- Die Card wird hier ähnlich wie bei der Loginseite gestylt -->
+        <div class="card z-depth-3 fade-in">
+          <div class="card-content center-align">
+            <h4 class="card-title">Shitster Player</h4>
+            <p>Scanne den QR-Code, um einen Song abzuspielen.</p>
+            <div id="qr-reader" class="qr-box" style="margin: 20px auto;"></div>
+          </div>
+          <div class="card-action center-align">
+            <button id="scan-next" class="btn-large waves-effect waves-light blue" style="display:none;">
+              Nächsten Song scannen
+            </button>
+            <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Materialize JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Player-Skripte -->
+  <script src="player.js" defer></script>
+  <script src="refresh.js" defer></script>
+  <!-- Externe Skripte -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
