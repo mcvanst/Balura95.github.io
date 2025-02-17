@@ -3,42 +3,34 @@ body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #e0eafc, #cfdef3); /* Leicht spannender, aber dezent */
+    /* Leichter, spannender Farbverlauf – nicht zu kräftig */
+    background: linear-gradient(135deg, #e0eafc, #cfdef3);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
   }
   
-  /* Container for the app content */
-  .container {
+  /* Player Area: Hier wird kein zusätzlicher Container mehr verwendet,
+     stattdessen zentriert der Inhalt direkt */
+  #player-area {
     width: 90%;
     max-width: 400px;
     margin: 20px auto;
-    /* Standardmäßig haben wir hier einen weißen Hintergrund – für die Loginseite, 
-       aber für den Player wollen wir nur die Card als weiße Box */
+  }
+  
+  /* Card (wird für den Player genutzt) */
+  .card {
     background: rgba(255, 255, 255, 0.98);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
     padding: 20px;
   }
   
-  /* Spezieller Container für den Player: transparent */
-  .container.player-container {
-    background: transparent;
-    box-shadow: none;
-    padding: 0;
-    margin: 20px auto;
-  }
-  
-  /* Card (wird auf beiden Seiten verwendet) */
-  .card {
-    border-radius: 12px !important;
-    overflow: hidden;
-  }
-  
-  /* Button-Anpassungen für den Login und andere große Buttons */
+  /* Button Large (für Scan-Next) */
   .btn-large {
     display: inline-flex;
     align-items: center;
@@ -60,11 +52,12 @@ body {
     background-color: #1976D2;
   }
   
-  /* Reset Button styling (fixiert unten rechts) */
+  /* Reset Button: Fixiert in der Mitte am unteren Rand */
   .reset-btn {
     position: fixed;
     bottom: 10px;
-    right: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     padding: 4px 6px;
     font-size: 0.7em;
     background-color: #e53935;
@@ -75,6 +68,9 @@ body {
     opacity: 0.9;
     z-index: 1000;
     transition: opacity 0.3s ease;
+    display: flex;            /* Damit der Text zentriert ist */
+    align-items: center;      /* Vertikale Zentrierung */
+    justify-content: center;  /* Horizontale Zentrierung */
   }
   
   .reset-btn:hover {
@@ -93,7 +89,7 @@ body {
   
   /* Responsive Anpassungen */
   @media (max-width: 600px) {
-    .container {
+    #player-area {
       width: 95%;
       margin: 10px auto;
     }
