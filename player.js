@@ -19,13 +19,20 @@ function toggleUIAfterLogin() {
 window.qrScannerActive = false;
 window.qrScanner = null;
 
+// --- QR-Code Scanner Setup ---
 function startQrScanner() {
   if (window.qrScannerActive) return; // Prevent multiple scanners
 
   window.qrScanner = new Html5Qrcode("qr-reader");
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
-  document.getElementById('title').textContent = 'QR Code scannen';
+  
+  // Falls ein Titel-Element vorhanden ist, aktualisieren wir es
+  const titleElement = document.getElementById('title');
+  if (titleElement) {
+    titleElement.textContent = 'QR Code scannen';
+  }
+  
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -42,13 +49,29 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000});
         stopQrScanner();
-        window.playTrack(trackUri);
+        // Statt direkt abzuspielen, zeigen wir den Play-Button an:
+        document.getElementById('play-track').style.display = 'inline-flex';
       } else {
         M.toast({html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000});
       }
     }
   ).catch(err => console.error("QR code scanning failed:", err));
 }
+
+// Event Listener für den Play-Button hinzufügen
+document.addEventListener('DOMContentLoaded', () => {
+  const playButton = document.getElementById('play-track');
+  if (playButton) {
+    playButton.addEventListener('click', () => {
+      // Starte die Wiedergabe über den Spotify-Player
+      window.playTrack(window.lastScannedTrackUri);
+      // Verstecke den Play-Button, zeige danach den Scan Next Button an
+      playButton.style.display = 'none';
+      document.getElementById('scan-next').style.display = 'inline-flex';
+    });
+  }
+});
+
 
 // Stops the scanner and shows "Scan Next Song" button
 function stopQrScanner() {
