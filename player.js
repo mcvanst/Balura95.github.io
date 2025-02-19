@@ -25,7 +25,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Update title if available
+  // (Optional) Update title if desired; otherwise, keep static.
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -48,8 +48,12 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Show the Play button (user interaction required)
-        document.getElementById('play-track').style.display = 'inline-flex';
+        // Autoplay: If on iOS, use deep linking; otherwise, automatically play.
+        if (isIOS()) {
+          window.location.href = trackUri;
+        } else {
+          window.playTrack(trackUri);
+        }
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -57,18 +61,8 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-// Event Listener for Play Button
-document.addEventListener('DOMContentLoaded', () => {
-  const playButton = document.getElementById('play-track');
-  if (playButton) {
-    playButton.addEventListener('click', () => {
-      window.playTrack(window.lastScannedTrackUri);
-      // Hide Play button, show Scan Next button after starting playback
-      playButton.style.display = 'none';
-      document.getElementById('scan-next').style.display = 'inline-flex';
-    });
-  }
-});
+// Remove the play button event listener since we're auto-triggering playback
+// (Alternatively, you can keep the play button in case of fallback, but here we opt for autoplay.)
 
 // Stops the scanner and shows "Scan Next Song" button
 function stopQrScanner() {
@@ -76,6 +70,7 @@ function stopQrScanner() {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
+      // (Optional) Restore title if needed
       const titleElement = document.getElementById('title');
       if (titleElement) {
         titleElement.textContent = 'Song läuft...';
@@ -105,8 +100,8 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
-
-  // Error event listeners for fallback
+  
+  // Error event listeners to trigger fallback if needed
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     fallbackToDeepLink();
@@ -134,7 +129,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // If on iOS, use deep linking to open native Spotify
+    // For iOS, if playTrack is called here, fallback to deep linking
     if (isIOS()) {
       window.location.href = trackUri;
       return;
