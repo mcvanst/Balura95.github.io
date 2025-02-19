@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
+  // Resume AudioContext on first touch for iOS
+  document.addEventListener('touchstart', function resumeAudioContext() {
+    if (window.AudioContext || window.webkitAudioContext) {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      context.resume().then(() => {
+        console.log("Audio context resumed");
+      });
+    }
+    document.removeEventListener('touchstart', resumeAudioContext);
+  });
   toggleUIAfterLogin();
 });
 
@@ -25,7 +35,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Optionally update title; if not needed, this can be removed
+  // Update title if available (kept static otherwise)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -48,24 +58,8 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // For iOS, embed the Spotify widget; for others, autoplay via playTrack.
-        if (isIOS()) {
-          // Create or get a container for the widget
-          let widgetContainer = document.getElementById('spotify-widget');
-          if (!widgetContainer) {
-            widgetContainer = document.createElement('div');
-            widgetContainer.id = 'spotify-widget';
-            // Append the widget container to the card content (or another appropriate location)
-            const cardContent = document.querySelector('.card-content');
-            cardContent.appendChild(widgetContainer);
-          }
-          // Build the embed URL using the track id (match[1])
-          const embedUrl = `https://open.spotify.com/embed/track/${match[1]}?theme=0`;
-          widgetContainer.innerHTML = `<iframe src="${embedUrl}" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
-        } else {
-          // Non-iOS: Autoplay track using the Spotify Web Playback SDK
-          window.playTrack(trackUri);
-        }
+        // Autoplay: Immediately trigger playback using the Web Playback SDK
+        window.playTrack(trackUri);
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -88,11 +82,6 @@ function stopQrScanner() {
   }
 }
 
-// --- iOS Detection ---
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
 // --- Spotify Web Playback SDK Integration ---
 window.deviceId = null;
 
@@ -109,7 +98,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners for fallback
+  // Error event listeners for fallback if needed
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     fallbackToDeepLink();
@@ -137,12 +126,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // For iOS, if playTrack is called (fallback scenario), use deep linking.
-    if (isIOS()) {
-      window.location.href = trackUri;
-      return;
-    }
-    
+    // Attempt to use the Web Playback SDK on all devices (including iOS)
     let waitTime = 0;
     while (!window.deviceId && waitTime < 10000) {
       await new Promise(resolve => setTimeout(resolve, 200));
