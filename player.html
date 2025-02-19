@@ -12,29 +12,27 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="styles.css">
   
-  <!-- External Scripts: Load these in the head -->
+  <!-- External Scripts -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   
-  <!-- Materialize JS -->
+  <!-- Materialize JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
-  <!-- Player Area (no extra container) -->
+  <!-- Player Area -->
   <div id="player-area">
     <div class="card z-depth-3 fade-in">
       <div class="card-content center-align">
-        <!-- Title element required by player.js -->
         <h4 id="title" class="card-title">Shitster Player</h4>
-        <!-- Container for the QR reader -->
         <div id="qr-reader" class="qr-box" style="margin: 20px auto;"></div>
       </div>
       <div class="card-action center-align">
-        <!-- Play button for non-iOS devices (hidden by default) -->
+        <!-- Play Button: initially hidden -->
         <button id="play-track" class="btn-large waves-effect waves-light blue" style="display:none;">
           Abspielen
         </button>
-        <!-- Scan Next button -->
+        <!-- Scan Next Button: initially hidden -->
         <button id="scan-next" class="btn-large waves-effect waves-light blue" style="display:none;">
           Nächsten Song scannen
         </button>
@@ -42,10 +40,10 @@
     </div>
   </div>
 
-  <!-- Reset Button fixed in the center at the bottom -->
+  <!-- Reset Button: fixed in the center bottom -->
   <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
 
-  <!-- Your custom player JavaScript -->
+  <!-- Player JS -->
   <script src="player.js" defer></script>
 </body>
 </html>

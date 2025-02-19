@@ -24,7 +24,7 @@ function startQrScanner() {
   window.qrScanner = new Html5Qrcode("qr-reader");
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
-  
+
   // Update title if available
   const titleElement = document.getElementById('title');
   if (titleElement) {
@@ -48,24 +48,8 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        
-        if (isIOS()) {
-          // On iOS, embed the Spotify widget instead of using the Play button.
-          let widgetContainer = document.getElementById('spotify-widget');
-          if (!widgetContainer) {
-            widgetContainer = document.createElement('div');
-            widgetContainer.id = 'spotify-widget';
-            // Append widgetContainer to the card-content area
-            const cardContent = document.querySelector('.card-content');
-            cardContent.appendChild(widgetContainer);
-          }
-          // Create the embed URL for the track.
-          const embedUrl = `https://open.spotify.com/embed/track/${match[1]}`;
-          widgetContainer.innerHTML = `<iframe src="${embedUrl}" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
-        } else {
-          // For non-iOS devices, show the Play button for manual playback.
-          document.getElementById('play-track').style.display = 'inline-flex';
-        }
+        // Show the Play button (user interaction required)
+        document.getElementById('play-track').style.display = 'inline-flex';
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -73,13 +57,13 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-// Event Listener for the Play Button (non-iOS)
+// Event Listener for Play Button
 document.addEventListener('DOMContentLoaded', () => {
   const playButton = document.getElementById('play-track');
   if (playButton) {
     playButton.addEventListener('click', () => {
       window.playTrack(window.lastScannedTrackUri);
-      // Hide the Play button and show the Scan Next button
+      // Hide Play button, show Scan Next button after starting playback
       playButton.style.display = 'none';
       document.getElementById('scan-next').style.display = 'inline-flex';
     });
@@ -121,8 +105,8 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
-  
-  // Error listeners to trigger fallback if needed
+
+  // Error event listeners for fallback
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     fallbackToDeepLink();
@@ -150,7 +134,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // For iOS, if widget is not used, fallback to deep linking
+    // If on iOS, use deep linking to open native Spotify
     if (isIOS()) {
       window.location.href = trackUri;
       return;
