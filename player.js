@@ -58,11 +58,8 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         
         // Überprüfe, ob ein Access Token vorhanden ist
-        if (localStorage.getItem('access_token')) {
-          M.toast({ html: "Authentifiziert: Song geladen", classes: "rounded", displayLength: 1000 });
-        } else {
-          M.toast({ html: "Nicht authentifiziert", classes: "rounded", displayLength: 1000 });
-        }
+        console.log("Authentication status:", localStorage.getItem('access_token') ? "Authenticated" : "Not authenticated");
+
         
         stopQrScanner();
         // Autoplay: Immer über den Web Playback SDK
