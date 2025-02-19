@@ -25,7 +25,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // (Optional) Update title if desired; otherwise, keep static.
+  // Optionally update the title (you may choose to keep it static)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -48,10 +48,12 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Autoplay: If on iOS, use deep linking; otherwise, automatically play.
+        // Autoplay logic:
         if (isIOS()) {
+          // On iOS, use deep linking (which opens the native Spotify app)
           window.location.href = trackUri;
         } else {
+          // On non-iOS devices, automatically trigger playback via the Web Playback SDK
           window.playTrack(trackUri);
         }
       } else {
@@ -61,16 +63,12 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-// Remove the play button event listener since we're auto-triggering playback
-// (Alternatively, you can keep the play button in case of fallback, but here we opt for autoplay.)
-
-// Stops the scanner and shows "Scan Next Song" button
 function stopQrScanner() {
   if (window.qrScanner) {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // (Optional) Restore title if needed
+      // Optionally update title after scanning
       const titleElement = document.getElementById('title');
       if (titleElement) {
         titleElement.textContent = 'Song läuft...';
@@ -170,7 +168,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     }
   };
 
-  // --- Stop Current Playback Function ---
   window.stopPlayback = async function() {
     const token = localStorage.getItem('access_token');
     if (!token) return;
