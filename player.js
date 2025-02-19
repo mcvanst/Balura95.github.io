@@ -25,7 +25,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Optionally update the title (you may choose to keep it static)
+  // Optionally update title; if not needed, this can be removed
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -48,12 +48,22 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Autoplay logic:
+        // For iOS, embed the Spotify widget; for others, autoplay via playTrack.
         if (isIOS()) {
-          // On iOS, use deep linking (which opens the native Spotify app)
-          window.location.href = trackUri;
+          // Create or get a container for the widget
+          let widgetContainer = document.getElementById('spotify-widget');
+          if (!widgetContainer) {
+            widgetContainer = document.createElement('div');
+            widgetContainer.id = 'spotify-widget';
+            // Append the widget container to the card content (or another appropriate location)
+            const cardContent = document.querySelector('.card-content');
+            cardContent.appendChild(widgetContainer);
+          }
+          // Build the embed URL using the track id (match[1])
+          const embedUrl = `https://open.spotify.com/embed/track/${match[1]}?theme=0`;
+          widgetContainer.innerHTML = `<iframe src="${embedUrl}" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
         } else {
-          // On non-iOS devices, automatically trigger playback via the Web Playback SDK
+          // Non-iOS: Autoplay track using the Spotify Web Playback SDK
           window.playTrack(trackUri);
         }
       } else {
@@ -99,7 +109,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners to trigger fallback if needed
+  // Error event listeners for fallback
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     fallbackToDeepLink();
@@ -127,7 +137,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // For iOS, if playTrack is called here, fallback to deep linking
+    // For iOS, if playTrack is called (fallback scenario), use deep linking.
     if (isIOS()) {
       window.location.href = trackUri;
       return;
