@@ -5,13 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
-  // Resume AudioContext on first touch for iOS
+  // Resume AudioContext on first touch (iOS requirement)
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
       const context = new (window.AudioContext || window.webkitAudioContext)();
-      context.resume().then(() => {
-        console.log("Audio context resumed");
-      });
+      context.resume();
     }
     document.removeEventListener('touchstart', resumeAudioContext);
   });
@@ -35,7 +33,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Optionally update the title (kept static here)
+  // Optionally update the title (you can keep it static)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -58,8 +56,13 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Autoplay: Automatically trigger playback using the Web Playback SDK
-        window.playTrack(trackUri);
+        // If device is iOS, use deep linking to the Spotify app.
+        // Otherwise, attempt to autoplay via the Web Playback SDK.
+        if (isIOS()) {
+          window.location.href = trackUri;
+        } else {
+          window.playTrack(trackUri);
+        }
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -82,6 +85,11 @@ function stopQrScanner() {
   }
 }
 
+// --- iOS Detection ---
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
 // --- Spotify Web Playback SDK Integration ---
 window.deviceId = null;
 
@@ -98,31 +106,32 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners (errors will be logged)
+  // Add error event listeners (deep linking fallback on error)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
+    window.location.href = window.lastScannedTrackUri;
   });
   player.addListener('authentication_error', ({ message }) => {
     console.error('Authentication Error:', message);
+    window.location.href = window.lastScannedTrackUri;
   });
   player.addListener('account_error', ({ message }) => {
     console.error('Account Error:', message);
+    window.location.href = window.lastScannedTrackUri;
   });
   player.addListener('playback_error', ({ message }) => {
     console.error('Playback Error:', message);
+    window.location.href = window.lastScannedTrackUri;
   });
 
   player.connect();
 
-  // Playback function with debug toasts
   window.playTrack = async function(trackUri) {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      M.toast({ html: "Nicht authentifiziert!", classes: "rounded", displayLength: 2000 });
+      M.toast({ html: "Session expired. Please log in again.", classes: "rounded", displayLength: 1000 });
       logout();
       return;
-    } else {
-      M.toast({ html: "Authentifiziert.", classes: "rounded", displayLength: 1000 });
     }
     
     let waitTime = 0;
@@ -131,7 +140,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       waitTime += 200;
     }
     if (!window.deviceId) {
-      M.toast({ html: "Spotify player ist nicht bereit. Versuche es später erneut.", classes: "rounded", displayLength: 2000 });
+      M.toast({ html: "Spotify player is not ready yet. Try again soon.", classes: "rounded", displayLength: 1000 });
       return;
     }
     
@@ -147,18 +156,15 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
       if (response.status === 204) {
         console.log("Track started successfully.");
-        M.toast({ html: "Song wird abgespielt.", classes: "rounded", displayLength: 1000 });
         document.getElementById('scan-next').style.display = 'block';
       } else if (response.status === 401) {
-        M.toast({ html: "Session abgelaufen. Bitte neu anmelden.", classes: "rounded", displayLength: 2000 });
+        M.toast({ html: "Session expired. Logging out...", classes: "rounded", displayLength: 1000 });
         logout();
       } else {
         const data = await response.json();
-        M.toast({ html: "Spotify API Fehler: " + data.error.message, classes: "rounded", displayLength: 3000 });
         console.error("Spotify API error:", data);
       }
     } catch (error) {
-      M.toast({ html: "Fehler beim Abspielen: " + error.message, classes: "rounded", displayLength: 3000 });
       console.error("Error playing track:", error);
     }
   };
@@ -187,15 +193,13 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   };
 };
 
-// --- Event Listener for Scan Next Button ---
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scan-next').addEventListener('click', () => {
-    window.stopPlayback(); // Stop current song before scanning a new one
+    window.stopPlayback();
     startQrScanner();
   });
 });
 
-// --- Logout Function ---
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
