@@ -106,15 +106,19 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   // Add error event listeners to log errors (no deep-link fallback here)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
+    M.toast({ html: "Initialization Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('authentication_error', ({ message }) => {
     console.error('Authentication Error:', message);
+    M.toast({ html: "Authentication Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('account_error', ({ message }) => {
     console.error('Account Error:', message);
+    M.toast({ html: "Account Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('playback_error', ({ message }) => {
     console.error('Playback Error:', message);
+    M.toast({ html: "Playback Error: " + message, classes: "rounded", displayLength: 3000 });
   });
 
   player.connect();
