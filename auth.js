@@ -1,7 +1,7 @@
 // auth.js – Spotify Authentication & PKCE Flow
 
 const CLIENT_ID = '85528d9ddff344ebba781615c218d339';
-const REDIRECT_URI = 'https://balura95.github.io/menu.html'; // After successful auth, redirect here
+const REDIRECT_URI = 'https://balura95.github.io'; // After successful auth, redirect here
 const SCOPES = 'user-read-playback-state user-modify-playback-state streaming user-read-email user-read-private';
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
