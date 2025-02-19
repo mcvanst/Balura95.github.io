@@ -20,7 +20,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
-  <!-- Direkt im Body, ohne extra Container -->
+  <!-- Player-Bereich -->
   <div id="player-area">
     <div class="card z-depth-3 fade-in">
       <div class="card-content center-align">
@@ -28,11 +28,11 @@
         <div id="qr-reader" class="qr-box" style="margin: 20px auto;"></div>
       </div>
       <div class="card-action center-align">
-        <!-- Play-Button: Wird angezeigt, nachdem ein Song geladen wurde -->
+        <!-- Play-Button, der auf iOS für die Wiedergabe benötigt wird -->
         <button id="play-track" class="btn-large waves-effect waves-light blue" style="display:none;">
           Abspielen
         </button>
-        <!-- Scan Next Button: Zum erneuten Scannen -->
+        <!-- Scan Next Button -->
         <button id="scan-next" class="btn-large waves-effect waves-light blue" style="display:none;">
           Nächsten Song scannen
         </button>

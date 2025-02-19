@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleUIAfterLogin();
 });
 
-
 // Function to show the player area and start the QR scanner
 function toggleUIAfterLogin() {
   document.getElementById('player-area').style.display = 'block';
@@ -19,7 +18,6 @@ function toggleUIAfterLogin() {
 window.qrScannerActive = false;
 window.qrScanner = null;
 
-// --- QR-Code Scanner Setup ---
 function startQrScanner() {
   if (window.qrScannerActive) return; // Prevent multiple scanners
 
@@ -27,12 +25,13 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
   
-  // Falls ein Titel-Element vorhanden ist, aktualisieren wir es
+  // Aktualisiere den Titel, falls vorhanden
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
   }
   
+  // Verstecke den Scan Next Button
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -58,31 +57,18 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-document.addEventListener('DOMContentLoaded', function resumeAudioContext() {
-  if (window.AudioContext || window.webkitAudioContext) {
-    const context = new (window.AudioContext || window.webkitAudioContext)();
-    context.resume().then(() => {
-      console.log("AudioContext reaktiviert");
-    });
-  }
-  document.removeEventListener('touchstart', resumeAudioContext);
-});
-
-
 // Event Listener für den Play-Button hinzufügen
 document.addEventListener('DOMContentLoaded', () => {
   const playButton = document.getElementById('play-track');
   if (playButton) {
     playButton.addEventListener('click', () => {
-      // Starte die Wiedergabe über den Spotify-Player
       window.playTrack(window.lastScannedTrackUri);
-      // Verstecke den Play-Button, zeige danach den Scan Next Button an
+      // Verstecke den Play-Button und zeige den Scan Next Button an
       playButton.style.display = 'none';
       document.getElementById('scan-next').style.display = 'inline-flex';
     });
   }
 });
-
 
 // Stops the scanner and shows "Scan Next Song" button
 function stopQrScanner() {
@@ -90,10 +76,18 @@ function stopQrScanner() {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      document.getElementById('title').textContent = 'Song läuft...';
+      const titleElement = document.getElementById('title');
+      if (titleElement) {
+        titleElement.textContent = 'Song läuft...';
+      }
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
+}
+
+// --- iOS Detection ---
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
 // --- Spotify Web Playback SDK Integration ---
@@ -122,6 +116,13 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
+    // Wenn iOS, dann Deep Linking zur nativen Spotify App verwenden:
+    if (isIOS()) {
+      window.location.href = trackUri;
+      return;
+    }
+    
+    // Für andere Geräte: Web Playback SDK verwenden
     let waitTime = 0;
     while (!window.deviceId && waitTime < 10000) {
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -182,7 +183,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   };
 };
 
-// --- Event Listeners ---
+// --- Event Listener für den Scan Next Button ---
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scan-next').addEventListener('click', () => {
     window.stopPlayback(); // Stop current song before scanning a new one
@@ -192,10 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Logout Function ---
 function logout() {
-  // Clear stored tokens and any cached data.
   localStorage.clear();
   sessionStorage.clear();
-  // Redirect to the login page (adjust the URL as needed)
   window.location.href = 'index.html';
 }
 
