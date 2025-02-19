@@ -56,16 +56,23 @@ function startQrScanner() {
       if (match && match[1]) {
         const trackUri = `spotify:track:${match[1]}`;
         window.lastScannedTrackUri = trackUri;
-        M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
+        
+        // Überprüfe, ob ein Access Token vorhanden ist
+        if (localStorage.getItem('access_token')) {
+          M.toast({ html: "Authentifiziert: Song geladen", classes: "rounded", displayLength: 1000 });
+        } else {
+          M.toast({ html: "Nicht authentifiziert", classes: "rounded", displayLength: 1000 });
+        }
+        
         stopQrScanner();
-        // Always use the Web Playback SDK to play the track:
+        // Autoplay: Immer über den Web Playback SDK
         window.playTrack(trackUri);
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
     }
   ).catch(err => console.error("QR code scanning failed:", err));
-}
+  
 
 function stopQrScanner() {
   if (window.qrScanner) {
