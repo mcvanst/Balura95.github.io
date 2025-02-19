@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
-  // Ensure the AudioContext is resumed on first touch (important for iOS)
+  // Resume AudioContext on first touch for iOS
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
       const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -41,7 +41,7 @@ function startQrScanner() {
     titleElement.textContent = 'QR Code scannen';
   }
   
-  // Hide the "Scan Next" button initially
+  // Hide the Scan Next button initially
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -56,13 +56,9 @@ function startQrScanner() {
       if (match && match[1]) {
         const trackUri = `spotify:track:${match[1]}`;
         window.lastScannedTrackUri = trackUri;
-        if (localStorage.getItem('access_token')) {
-          M.toast({ html: "Authentifiziert: Song geladen", classes: "rounded", displayLength: 1000 });
-      } else {
-          M.toast({ html: "Nicht authentifiziert", classes: "rounded", displayLength: 1000 });
-      }
+        M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Always use the Web Playback SDK to play the track:
+        // Autoplay: Automatically trigger playback using the Web Playback SDK
         window.playTrack(trackUri);
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
@@ -81,7 +77,6 @@ function stopQrScanner() {
       if (titleElement) {
         titleElement.textContent = 'Song läuft...';
       }
-      // Show the "Scan Next" button
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
@@ -103,32 +98,31 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Add error event listeners to log errors (no deep-link fallback here)
+  // Error event listeners (errors will be logged)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
-    M.toast({ html: "Initialization Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('authentication_error', ({ message }) => {
     console.error('Authentication Error:', message);
-    M.toast({ html: "Authentication Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('account_error', ({ message }) => {
     console.error('Account Error:', message);
-    M.toast({ html: "Account Error: " + message, classes: "rounded", displayLength: 3000 });
   });
   player.addListener('playback_error', ({ message }) => {
     console.error('Playback Error:', message);
-    M.toast({ html: "Playback Error: " + message, classes: "rounded", displayLength: 3000 });
   });
 
   player.connect();
 
+  // Playback function with debug toasts
   window.playTrack = async function(trackUri) {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      M.toast({ html: "Session expired. Please log in again.", classes: "rounded", displayLength: 1000 });
+      M.toast({ html: "Nicht authentifiziert!", classes: "rounded", displayLength: 2000 });
       logout();
       return;
+    } else {
+      M.toast({ html: "Authentifiziert.", classes: "rounded", displayLength: 1000 });
     }
     
     let waitTime = 0;
@@ -137,7 +131,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       waitTime += 200;
     }
     if (!window.deviceId) {
-      M.toast({ html: "Spotify player is not ready yet. Try again soon.", classes: "rounded", displayLength: 1000 });
+      M.toast({ html: "Spotify player ist nicht bereit. Versuche es später erneut.", classes: "rounded", displayLength: 2000 });
       return;
     }
     
@@ -153,15 +147,18 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
       if (response.status === 204) {
         console.log("Track started successfully.");
+        M.toast({ html: "Song wird abgespielt.", classes: "rounded", displayLength: 1000 });
         document.getElementById('scan-next').style.display = 'block';
       } else if (response.status === 401) {
-        M.toast({ html: "Session expired. Logging out...", classes: "rounded", displayLength: 1000 });
+        M.toast({ html: "Session abgelaufen. Bitte neu anmelden.", classes: "rounded", displayLength: 2000 });
         logout();
       } else {
         const data = await response.json();
+        M.toast({ html: "Spotify API Fehler: " + data.error.message, classes: "rounded", displayLength: 3000 });
         console.error("Spotify API error:", data);
       }
     } catch (error) {
+      M.toast({ html: "Fehler beim Abspielen: " + error.message, classes: "rounded", displayLength: 3000 });
       console.error("Error playing track:", error);
     }
   };
