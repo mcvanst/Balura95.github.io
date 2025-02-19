@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
-  // Resume AudioContext on first touch for iOS
+  // Ensure the AudioContext is resumed on first touch (important for iOS)
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
       const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -35,13 +35,13 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Update title if available (kept static otherwise)
+  // Optionally update the title (kept static here)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
   }
   
-  // Hide the Scan Next button initially
+  // Hide the "Scan Next" button initially
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -58,7 +58,7 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Autoplay: Immediately trigger playback using the Web Playback SDK
+        // Always use the Web Playback SDK to play the track:
         window.playTrack(trackUri);
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
@@ -77,6 +77,7 @@ function stopQrScanner() {
       if (titleElement) {
         titleElement.textContent = 'Song läuft...';
       }
+      // Show the "Scan Next" button
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
@@ -98,22 +99,18 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners for fallback if needed
+  // Add error event listeners to log errors (no deep-link fallback here)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
-    fallbackToDeepLink();
   });
   player.addListener('authentication_error', ({ message }) => {
     console.error('Authentication Error:', message);
-    fallbackToDeepLink();
   });
   player.addListener('account_error', ({ message }) => {
     console.error('Account Error:', message);
-    fallbackToDeepLink();
   });
   player.addListener('playback_error', ({ message }) => {
     console.error('Playback Error:', message);
-    fallbackToDeepLink();
   });
 
   player.connect();
@@ -126,7 +123,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // Attempt to use the Web Playback SDK on all devices (including iOS)
     let waitTime = 0;
     while (!window.deviceId && waitTime < 10000) {
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -185,15 +181,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     }
   };
 };
-
-function fallbackToDeepLink() {
-  M.toast({ html: "Playback error detected. Redirecting to native Spotify.", classes: "rounded", displayLength: 2000 });
-  if (window.lastScannedTrackUri) {
-    window.location.href = window.lastScannedTrackUri;
-  } else {
-    console.error("No track URI available for deep linking.");
-  }
-}
 
 // --- Event Listener for Scan Next Button ---
 document.addEventListener('DOMContentLoaded', () => {
