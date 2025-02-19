@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleUIAfterLogin();
 });
 
-// Function to show the player area and start the QR scanner
+// Show player area and start the QR scanner
 function toggleUIAfterLogin() {
   document.getElementById('player-area').style.display = 'block';
   startQrScanner();
@@ -24,14 +24,14 @@ function startQrScanner() {
   window.qrScanner = new Html5Qrcode("qr-reader");
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
-  
-  // Aktualisiere den Titel, falls vorhanden
+
+  // Update title if available
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
   }
   
-  // Verstecke den Scan Next Button
+  // Hide the Scan Next button initially
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -46,24 +46,24 @@ function startQrScanner() {
       if (match && match[1]) {
         const trackUri = `spotify:track:${match[1]}`;
         window.lastScannedTrackUri = trackUri;
-        M.toast({html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000});
+        M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Statt direkt abzuspielen, zeigen wir den Play-Button an:
+        // Show the Play button (user interaction required)
         document.getElementById('play-track').style.display = 'inline-flex';
       } else {
-        M.toast({html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000});
+        M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
     }
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-// Event Listener für den Play-Button hinzufügen
+// Event Listener for Play Button
 document.addEventListener('DOMContentLoaded', () => {
   const playButton = document.getElementById('play-track');
   if (playButton) {
     playButton.addEventListener('click', () => {
       window.playTrack(window.lastScannedTrackUri);
-      // Verstecke den Play-Button und zeige den Scan Next Button an
+      // Hide Play button, show Scan Next button after starting playback
       playButton.style.display = 'none';
       document.getElementById('scan-next').style.display = 'inline-flex';
     });
@@ -105,31 +105,48 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
-  
+
+  // Error event listeners for fallback
+  player.addListener('initialization_error', ({ message }) => {
+    console.error('Initialization Error:', message);
+    fallbackToDeepLink();
+  });
+  player.addListener('authentication_error', ({ message }) => {
+    console.error('Authentication Error:', message);
+    fallbackToDeepLink();
+  });
+  player.addListener('account_error', ({ message }) => {
+    console.error('Account Error:', message);
+    fallbackToDeepLink();
+  });
+  player.addListener('playback_error', ({ message }) => {
+    console.error('Playback Error:', message);
+    fallbackToDeepLink();
+  });
+
   player.connect();
 
   window.playTrack = async function(trackUri) {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      M.toast({html: "Session expired. Please log in again.", classes: "rounded", displayLength: 1000});
+      M.toast({ html: "Session expired. Please log in again.", classes: "rounded", displayLength: 1000 });
       logout();
       return;
     }
     
-    // Wenn iOS, dann Deep Linking zur nativen Spotify App verwenden:
+    // If on iOS, use deep linking to open native Spotify
     if (isIOS()) {
       window.location.href = trackUri;
       return;
     }
     
-    // Für andere Geräte: Web Playback SDK verwenden
     let waitTime = 0;
     while (!window.deviceId && waitTime < 10000) {
       await new Promise(resolve => setTimeout(resolve, 200));
       waitTime += 200;
     }
     if (!window.deviceId) {
-      M.toast({html: "Spotify player is not ready yet. Try again soon.", classes: "rounded", displayLength: 1000});
+      M.toast({ html: "Spotify player is not ready yet. Try again soon.", classes: "rounded", displayLength: 1000 });
       return;
     }
     
@@ -147,7 +164,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         console.log("Track started successfully.");
         document.getElementById('scan-next').style.display = 'block';
       } else if (response.status === 401) {
-        M.toast({html: "Session expired. Logging out...", classes: "rounded", displayLength: 1000});
+        M.toast({ html: "Session expired. Logging out...", classes: "rounded", displayLength: 1000 });
         logout();
       } else {
         const data = await response.json();
@@ -158,7 +175,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     }
   };
 
-  // --- STOP Current Playback Function ---
+  // --- Stop Current Playback Function ---
   window.stopPlayback = async function() {
     const token = localStorage.getItem('access_token');
     if (!token) return;
@@ -183,7 +200,16 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   };
 };
 
-// --- Event Listener für den Scan Next Button ---
+function fallbackToDeepLink() {
+  M.toast({ html: "Playback error detected. Redirecting to native Spotify.", classes: "rounded", displayLength: 2000 });
+  if (window.lastScannedTrackUri) {
+    window.location.href = window.lastScannedTrackUri;
+  } else {
+    console.error("No track URI available for deep linking.");
+  }
+}
+
+// --- Event Listener for Scan Next Button ---
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scan-next').addEventListener('click', () => {
     window.stopPlayback(); // Stop current song before scanning a new one
