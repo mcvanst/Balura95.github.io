@@ -58,6 +58,17 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
+document.addEventListener('DOMContentLoaded', function resumeAudioContext() {
+  if (window.AudioContext || window.webkitAudioContext) {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    context.resume().then(() => {
+      console.log("AudioContext reaktiviert");
+    });
+  }
+  document.removeEventListener('touchstart', resumeAudioContext);
+});
+
+
 // Event Listener für den Play-Button hinzufügen
 document.addEventListener('DOMContentLoaded', () => {
   const playButton = document.getElementById('play-track');
