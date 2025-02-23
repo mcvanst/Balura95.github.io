@@ -33,13 +33,13 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Update title (optional)
+  // Setzt optional den Titel (hier "QR Code scannen")
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
   }
   
-  // Hide the Scan Next button initially
+  // Verstecke den "Scan Next" Button zunächst
   document.getElementById('scan-next').style.display = 'none';
 
   const qrConfig = { fps: 10, qrbox: 250 };
@@ -56,17 +56,11 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Debug-Ausgabe, um zu prüfen, ob isIOS() true ist
-        console.log("isIOS =", isIOS());
-        // Auf iOS: zuerst Autoplay versuchen, und falls nicht, Play-Button anzeigen
+        // iOS: Jetzt soll der Play-Button angezeigt werden,
+        // Android: Autoplay wird sofort versucht.
         if (isIOS()) {
-          window.playTrack(trackUri).then(success => {
-            if (!success) {
-              document.getElementById('play-track').style.display = 'inline-flex';
-            }
-          });
+          document.getElementById('play-track').style.display = 'inline-flex';
         } else {
-          // Auf Android: Autoplay
           window.playTrack(trackUri);
         }
       } else {
@@ -95,7 +89,7 @@ function stopQrScanner() {
             <div class="bar"></div>
           </div>
         `;
-        // Aktualisiere jeden Balken einmalig zufällig
+        // Setze für jeden Balken zufällig einmalig Animationseigenschaften
         const bars = document.querySelectorAll('#soundwave .bar');
         bars.forEach(bar => {
           updateRandomAnimation(bar);
@@ -132,13 +126,13 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     name: 'Web Player',
     getOAuthToken: cb => { cb(token); }
   });
-  window.player = player; // Global speichern für activateElement
+  window.player = player; // Global speichern, um activateElement() nutzen zu können
 
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
   
-  // Fehler-Listener: Bei Fehlern wird per Deep Link umgeleitet (Fallback)
+  // Fehler-Listener: Bei Fehlern wird als Fallback per Deep Link umgeleitet
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -176,7 +170,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return false;
     }
     
-    // Auf iOS: activateElement() wird vom Play-Button ausgelöst (im Event-Handler)
+    // Bei iOS wird activateElement() vom Play-Button ausgelöst – im Event-Handler
     if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
       window.player.activateElement(playButton);
@@ -233,7 +227,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Event Listener for the Play Button (relevant on iOS)
+  // Event Listener for the Play Button (only relevant on iOS)
   document.getElementById('play-track').addEventListener('click', () => {
     if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
