@@ -33,7 +33,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Update title if available
+  // Set title text (optional)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -56,8 +56,13 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Show the Play button so the user can trigger playback.
-        document.getElementById('play-track').style.display = 'inline-flex';
+        // If iOS, show the Play button so user can tap to trigger playback.
+        // On Android, autoplay directly.
+        if (isIOS()) {
+          document.getElementById('play-track').style.display = 'inline-flex';
+        } else {
+          window.playTrack(trackUri);
+        }
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -96,14 +101,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     name: 'Web Player',
     getOAuthToken: cb => { cb(token); }
   });
-  // Save the player globally to use activateElement later.
+  // Save player globally for activateElement
   window.player = player;
 
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners: fallback to deep link on error (optional)
+  // Error event listeners (fallback deep linking is optional; here wir redirect on error)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -141,8 +146,9 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
-    // Call activateElement() in response to the user's click.
-    if (window.player && typeof window.player.activateElement === 'function') {
+    // On iOS, user must trigger activateElement via the Play button.
+    if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
+      // We assume the user has tapped the Play button.
       const playButton = document.getElementById('play-track');
       window.player.activateElement(playButton);
     }
@@ -196,8 +202,8 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('play-track').addEventListener('click', () => {
-    // On play button click, activate the element and then play track
-    if (window.player && typeof window.player.activateElement === 'function') {
+    // On iOS, activate the element before playback
+    if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
       window.player.activateElement(playButton);
     }
