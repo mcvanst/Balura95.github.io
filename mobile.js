@@ -174,3 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Logout-Funktion
+function logout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+  
+  // Event Listener für den "App zurücksetzen"-Button
+  document.addEventListener('DOMContentLoaded', () => {
+    const resetButton = document.getElementById('reset-app');
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
+          logout();
+        }
+      });
+    }
+  });
+  
