@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Funktion, die einen zufälligen Track aus der eingegebenen Playlist abspielt
 async function playRandomTrack() {
   const playlistUrl = document.getElementById('playlist-url').value;
+  console.log("URL", playlistUrl); // Gibt die komplette Antwort aus
   const playlistId = extractPlaylistId(playlistUrl);
   if (!playlistId) {
     M.toast({ html: "Ungültige Playlist URL", classes: "rounded", displayLength: 2000 });
@@ -144,6 +145,7 @@ async function playRandomTrack() {
     return;
   }
   const randomItem = getRandomTrack(tracks);
+  console.log(randomItem);
   if (!randomItem || !randomItem.track) {
     M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
     return;
