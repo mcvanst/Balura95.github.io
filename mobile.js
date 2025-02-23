@@ -8,12 +8,8 @@ function extractPlaylistId(url) {
   return match ? match[1] : null;
 }
 
-// Funktion zum Abrufen der Playlist-Tracks (mit Caching)
+// Funktion zum Abrufen und Cachen der Playlist-Tracks
 async function fetchPlaylistTracks(playlistId) {
-  if (cachedPlaylistTracks) {
-    console.log("Verwende gecachte Tracks:", cachedPlaylistTracks.length);
-    return cachedPlaylistTracks;
-  }
   const token = localStorage.getItem('access_token');
   const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
   try {
@@ -36,7 +32,27 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Wähle zufällig einen Track aus einem Array
+// Funktion, die beim Klick auf "Playlist einlesen" aufgerufen wird
+async function loadPlaylist() {
+  const playlistUrl = document.getElementById('playlist-url').value;
+  console.log("Playlist URL:", playlistUrl);
+  const playlistId = extractPlaylistId(playlistUrl);
+  if (!playlistId) {
+    M.toast({ html: "Ungültige Playlist URL", classes: "rounded", displayLength: 2000 });
+    return;
+  }
+  const tracks = await fetchPlaylistTracks(playlistId);
+  if (tracks && tracks.length > 0) {
+    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
+    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
+    // Zeige den Play-Button an, damit der Nutzer einen Song abspielen kann
+    document.getElementById('play-button').style.display = 'inline-flex';
+  } else {
+    M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
+  }
+}
+
+// Wähle einen zufälligen Track aus einem Array aus
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -57,7 +73,7 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Fehler-Listener (optional – nur protokollieren)
+    // Fehler-Listener (optional)
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -71,7 +87,6 @@ let spotifySDKReady = new Promise((resolve) => {
       console.error('Playback Error:', message);
     });
     player.connect().then(() => {
-      // Sobald der Player verbunden ist, definieren wir window.playTrack
       window.playTrack = async function(trackUri) {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
@@ -88,8 +103,8 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 
-              'Authorization': `Bearer ${token}`, 
+            headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -129,38 +144,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
+  // Event Listener für den "Playlist einlesen"-Button
+  const cacheButton = document.getElementById('cache-button');
+  if (cacheButton) {
+    cacheButton.addEventListener('click', loadPlaylist);
+  }
+  
   // Event Listener für den Play-Button
   const playButton = document.getElementById('play-button');
   if (playButton) {
-    playButton.addEventListener('click', playRandomTrack);
+    playButton.addEventListener('click', async () => {
+      if (!cachedPlaylistTracks) {
+        M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      const randomItem = getRandomTrack(cachedPlaylistTracks);
+      console.log("Random Item:", randomItem);
+      if (!randomItem || !randomItem.track) {
+        M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      const trackUri = randomItem.track.uri;
+      console.log("Playing track URI:", trackUri);
+      await spotifySDKReady;
+      const success = await window.playTrack(trackUri);
+      if (!success) {
+        M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+      }
+    });
   }
 });
-
-// Funktion, die einen zufälligen Track aus der eingegebenen Playlist abspielt
-async function playRandomTrack() {
-  const playlistUrl = document.getElementById('playlist-url').value;
-  console.log("Playlist URL:", playlistUrl);
-  const playlistId = extractPlaylistId(playlistUrl);
-  if (!playlistId) {
-    M.toast({ html: "Ungültige Playlist URL", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const tracks = await fetchPlaylistTracks(playlistId);
-  if (!tracks || tracks.length === 0) {
-    M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const randomItem = getRandomTrack(tracks);
-  console.log("Random Item:", randomItem);
-  if (!randomItem || !randomItem.track) {
-    M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const trackUri = randomItem.track.uri;
-  // Warten, bis der SDK bereit ist
-  await spotifySDKReady;
-  const success = await window.playTrack(trackUri);
-  if (!success) {
-    M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
-  }
-}

@@ -21,8 +21,12 @@
           <input id="playlist-url" type="text" value="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
           <label for="playlist-url">Playlist URL</label>
         </div>
-        <!-- Play Button: löst das Zufallsabspielen aus -->
-        <button id="play-button" class="btn-large waves-effect waves-light green">
+        <!-- Button zum Einlesen der Playlist -->
+        <button id="cache-button" class="btn-large waves-effect waves-light orange">
+          <i class="material-icons left">library_music</i> Playlist einlesen
+        </button>
+        <!-- Button zum Abspielen eines Songs aus der gecachten Playlist -->
+        <button id="play-button" class="btn-large waves-effect waves-light green" style="display:none; margin-top:20px;">
           <i class="material-icons left">play_arrow</i> Song abspielen
         </button>
       </div>
@@ -34,6 +38,7 @@
   
   <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Mobile-spezifisches JS -->
   <script src="mobile.js" defer></script>
 </body>
 </html>
