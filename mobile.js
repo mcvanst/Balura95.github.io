@@ -46,7 +46,7 @@ async function loadPlaylist() {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
     // Zeige den Play-Button an, damit der Nutzer einen Song abspielen kann
-    document.getElementById('play-button').style.display = 'inline-flex';
+    document.getElementById('play-button2').style.display = 'inline-flex';
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Event Listener für den Play-Button
-  const playButton = document.getElementById('play-button');
+  const playButton = document.getElementById('play-button2');
   if (playButton) {
     playButton.addEventListener('click', async () => {
       if (!cachedPlaylistTracks) {
