@@ -56,9 +56,15 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // Auf iOS: Zeige den Play-Button, damit der Nutzer den Song abspielen kann
+        // Debug-Ausgabe, um zu prüfen, ob isIOS() true ist
+        console.log("isIOS =", isIOS());
+        // Auf iOS: zuerst Autoplay versuchen, und falls nicht, Play-Button anzeigen
         if (isIOS()) {
-          document.getElementById('play-track').style.display = 'inline-flex';
+          window.playTrack(trackUri).then(success => {
+            if (!success) {
+              document.getElementById('play-track').style.display = 'inline-flex';
+            }
+          });
         } else {
           // Auf Android: Autoplay
           window.playTrack(trackUri);
@@ -75,7 +81,7 @@ function stopQrScanner() {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // Statt des statischen Textes "Song läuft..." wird hier die animierte Soundwave eingefügt:
+      // Statt "Song läuft..." Soundwave-Animation einfügen:
       const titleElement = document.getElementById('title');
       if (titleElement) {
         titleElement.innerHTML = `
@@ -132,7 +138,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     window.deviceId = device_id;
   });
   
-  // Fehler-Listener: Bei Fehlern wird per Deep Link umgeleitet
+  // Fehler-Listener: Bei Fehlern wird per Deep Link umgeleitet (Fallback)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -227,7 +233,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Event Listener for the Play Button (only relevant on iOS)
+  // Event Listener for the Play Button (relevant on iOS)
   document.getElementById('play-track').addEventListener('click', () => {
     if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
