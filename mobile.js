@@ -184,7 +184,7 @@ function logout() {
   
   // Event Listener für den "App zurücksetzen"-Button
   document.addEventListener('DOMContentLoaded', () => {
-    const resetButton = document.getElementById('reset-app');
+    const resetButton = document.getElementById('reset-app2');
     if (resetButton) {
       resetButton.addEventListener('click', () => {
         if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
