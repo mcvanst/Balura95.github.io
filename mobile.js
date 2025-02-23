@@ -52,7 +52,7 @@ async function loadPlaylist() {
   }
 }
 
-// Wähle einen zufälligen Track aus einem Array aus
+// Wähle zufällig einen Track aus einem Array aus
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -73,7 +73,7 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Fehler-Listener (optional)
+    // Fehler-Listener (optional – hier nur loggen)
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -103,8 +103,8 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: {
-              'Authorization': `Bearer ${token}`,
+            headers: { 
+              'Authorization': `Bearer ${token}`, 
               'Content-Type': 'application/json'
             }
           });
