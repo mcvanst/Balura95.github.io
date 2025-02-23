@@ -1,5 +1,6 @@
-// Globale Variablen zum Zwischenspeichern der Playlist-Tracks und der ausgewählten Track-URI
+// Globale Variable zum Zwischenspeichern der Playlist-Tracks
 let cachedPlaylistTracks = null;
+// Globale Variable zum Speichern der ausgewählten Track-URI
 let selectedTrackUri = null;
 
 // Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
@@ -47,7 +48,12 @@ async function loadPlaylist() {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
     // Zeige den Button zum Zufällig-Auswählen eines Songs an
-    document.getElementById('select-song').style.display = 'inline-flex';
+    const selectButton = document.getElementById('select-song');
+    if (selectButton) {
+      selectButton.style.display = 'inline-flex';
+    } else {
+      console.error("select-song button not found");
+    }
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
@@ -132,7 +138,7 @@ let spotifySDKReady = new Promise((resolve) => {
 
 // Konsolidierter DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
-  // Falls kein Access Token vorhanden, weiterleiten
+  // Falls kein Access Token vorhanden, umleiten
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
@@ -173,7 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("Ausgewählte Track URI:", selectedTrackUri);
       M.toast({ html: "Zufälliger Song ausgewählt", classes: "rounded", displayLength: 2000 });
       // Zeige den Play-Button an
-      document.getElementById('play-button2').style.display = 'inline-flex';
+      const playButton = document.getElementById('play-button2');
+      if (playButton) {
+        playButton.style.display = 'inline-flex';
+      } else {
+        console.error("play-button not found");
+      }
     });
   } else {
     console.error("select-song button not found");
