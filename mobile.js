@@ -1,6 +1,5 @@
-// Globale Variable zum Zwischenspeichern der Playlist-Tracks
+// Globale Variablen zum Zwischenspeichern der Playlist-Tracks und der ausgewählten Track-URI
 let cachedPlaylistTracks = null;
-// Globale Variable zum Speichern der ausgewählten Track-URI
 let selectedTrackUri = null;
 
 // Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
@@ -131,12 +130,14 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// Prüfe, ob ein Access Token vorhanden ist, sonst umleiten
+// Konsolidierter DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
+  // Falls kein Access Token vorhanden, weiterleiten
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
+  
   // AudioContext aktivieren (iOS)
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
@@ -150,6 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cacheButton = document.getElementById('cache-button');
   if (cacheButton) {
     cacheButton.addEventListener('click', loadPlaylist);
+  } else {
+    console.error("cache-button not found");
   }
   
   // Event Listener für den "Zufälligen Song auswählen"-Button
@@ -169,12 +172,14 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
       M.toast({ html: "Zufälliger Song ausgewählt", classes: "rounded", displayLength: 2000 });
-      // Optional: Zeige den Play-Button, falls noch nicht sichtbar
+      // Zeige den Play-Button an
       document.getElementById('play-button2').style.display = 'inline-flex';
     });
+  } else {
+    console.error("select-song button not found");
   }
   
-  // Event Listener für den Play-Button
+  // Event Listener für den Play-Button (zum Abspielen des ausgewählten Songs)
   const playButton = document.getElementById('play-button2');
   if (playButton) {
     playButton.addEventListener('click', async () => {
@@ -189,17 +194,11 @@ document.addEventListener('DOMContentLoaded', () => {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
     });
+  } else {
+    console.error("play-button not found");
   }
-});
-
-// Logout-Funktion und Reset-Button
-function logout() {
-  localStorage.clear();
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+  
+  // Event Listener für den Reset-Button
   const resetButton = document.getElementById('reset-app');
   if (resetButton) {
     resetButton.addEventListener('click', () => {
@@ -207,5 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
         logout();
       }
     });
+  } else {
+    console.error("reset-app not found");
   }
 });
+
+// Logout-Funktion
+function logout() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
