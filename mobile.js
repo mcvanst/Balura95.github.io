@@ -11,24 +11,29 @@ function extractPlaylistId(url) {
 
 // Lade die Tracks der Playlist und speichere sie in cachedPlaylistTracks
 async function fetchPlaylistTracks(playlistId) {
-  // Falls bereits zwischengespeichert, einfach zurückgeben
-  if (cachedPlaylistTracks) return cachedPlaylistTracks;
-  const token = localStorage.getItem('access_token');
-  const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
-  try {
-    const response = await fetch(endpoint, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+    const token = localStorage.getItem('access_token');
+    const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
+    try {
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      console.log("Playlist data received:", data); // Gibt die komplette Antwort aus
+      if (data && data.items) {
+        console.log("Anzahl geladener Tracks:", data.items.length);
+        return data.items; // Array von Track-Items
+      } else {
+        console.error("Keine Tracks gefunden:", data);
+        return [];
       }
-    });
-    const data = await response.json();
-    cachedPlaylistTracks = data.items; // Speichern
-    return cachedPlaylistTracks;
-  } catch (error) {
-    console.error("Error fetching playlist tracks:", error);
-    return null;
+    } catch (error) {
+      console.error("Error fetching playlist tracks:", error);
+      return null;
+    }
   }
-}
+  
 
 // Wähle einen zufälligen Track aus dem Array
 function getRandomTrack(tracks) {
