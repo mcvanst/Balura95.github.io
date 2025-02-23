@@ -1,5 +1,7 @@
 // Globale Variable zum Zwischenspeichern der Playlist-Tracks
 let cachedPlaylistTracks = null;
+// Globale Variable zum Speichern der ausgewählten Track-URI
+let selectedTrackUri = null;
 
 // Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
 function extractPlaylistId(url) {
@@ -45,8 +47,8 @@ async function loadPlaylist() {
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-    // Zeige den Play-Button an, damit der Nutzer einen Song abspielen kann
-    document.getElementById('play-button2').style.display = 'inline-flex';
+    // Zeige den Button zum Zufällig-Auswählen eines Songs an
+    document.getElementById('select-song').style.display = 'inline-flex';
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
@@ -103,8 +105,8 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: {
-              'Authorization': `Bearer ${token}`,
+            headers: { 
+              'Authorization': `Bearer ${token}`, 
               'Content-Type': 'application/json'
             }
           });
@@ -150,10 +152,10 @@ document.addEventListener('DOMContentLoaded', () => {
     cacheButton.addEventListener('click', loadPlaylist);
   }
   
-  // Event Listener für den Play-Button
-  const playButton = document.getElementById('play-button2');
-  if (playButton) {
-    playButton.addEventListener('click', async () => {
+  // Event Listener für den "Zufälligen Song auswählen"-Button
+  const selectButton = document.getElementById('select-song');
+  if (selectButton) {
+    selectButton.addEventListener('click', () => {
       if (!cachedPlaylistTracks) {
         M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
         return;
@@ -164,10 +166,25 @@ document.addEventListener('DOMContentLoaded', () => {
         M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
         return;
       }
-      const trackUri = randomItem.track.uri;
-      console.log("Playing track URI:", trackUri);
+      selectedTrackUri = randomItem.track.uri;
+      console.log("Ausgewählte Track URI:", selectedTrackUri);
+      M.toast({ html: "Zufälliger Song ausgewählt", classes: "rounded", displayLength: 2000 });
+      // Optional: Zeige den Play-Button, falls noch nicht sichtbar
+      document.getElementById('play-button2').style.display = 'inline-flex';
+    });
+  }
+  
+  // Event Listener für den Play-Button
+  const playButton = document.getElementById('play-button2');
+  if (playButton) {
+    playButton.addEventListener('click', async () => {
+      if (!selectedTrackUri) {
+        M.toast({ html: "Bitte zuerst einen Song auswählen", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      console.log("Playing track URI:", selectedTrackUri);
       await spotifySDKReady;
-      const success = await window.playTrack(trackUri);
+      const success = await window.playTrack(selectedTrackUri);
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
@@ -175,20 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Logout-Funktion und Reset-Button
 function logout() {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = 'index.html';
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const resetButton = document.getElementById('reset-app');
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
+        logout();
+      }
+    });
   }
-  
-  // Event Listener für den "App zurücksetzen"-Button
-  document.addEventListener('DOMContentLoaded', () => {
-    const resetButton = document.getElementById('reset-app');
-    if (resetButton) {
-      resetButton.addEventListener('click', () => {
-        if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
-          logout();
-        }
-      });
-    }
-  });
+});
