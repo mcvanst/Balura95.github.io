@@ -127,7 +127,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  document.getElementById('play-button').addEventListener('click', playRandomTrack);
+  document.addEventListener('DOMContentLoaded', () => {
+    const playButton = document.getElementById('play-button');
+    if (playButton) {
+      playButton.addEventListener('click', () => {
+        console.log("Play-Button geklickt");
+        playRandomTrack();
+      });
+    } else {
+      console.error("Play-Button nicht gefunden!");
+    }
+  });
+  
 });
 
 // Funktion, die einen zufälligen Track aus der eingegebenen Playlist abspielt
