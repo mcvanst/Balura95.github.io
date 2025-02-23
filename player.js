@@ -33,7 +33,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Optionally update the title (you can keep it static)
+  // Update title if available
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -56,13 +56,8 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // If device is iOS, use deep linking to the Spotify app.
-        // Otherwise, attempt to autoplay via the Web Playback SDK.
-        if (isIOS()) {
-          window.location.href = trackUri;
-        } else {
-          window.playTrack(trackUri);
-        }
+        // Show the Play button so the user can trigger playback.
+        document.getElementById('play-track').style.display = 'inline-flex';
       } else {
         M.toast({ html: "Invalid Spotify QR Code. Try again.", classes: "rounded", displayLength: 1000 });
       }
@@ -101,12 +96,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     name: 'Web Player',
     getOAuthToken: cb => { cb(token); }
   });
+  // Save the player globally to use activateElement later.
+  window.player = player;
 
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
   
-  // Add error event listeners (deep linking fallback on error)
+  // Error event listeners: fallback to deep link on error (optional)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -144,6 +141,12 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return;
     }
     
+    // Call activateElement() in response to the user's click.
+    if (window.player && typeof window.player.activateElement === 'function') {
+      const playButton = document.getElementById('play-track');
+      window.player.activateElement(playButton);
+    }
+    
     try {
       let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
         method: 'PUT',
@@ -172,7 +175,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   window.stopPlayback = async function() {
     const token = localStorage.getItem('access_token');
     if (!token) return;
-
     try {
       let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
         method: 'PUT',
@@ -181,7 +183,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
           'Content-Type': 'application/json'
         }
       });
-
       if (response.status === 204) {
         console.log("Playback stopped.");
       } else {
@@ -192,6 +193,19 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     }
   };
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('play-track').addEventListener('click', () => {
+    // On play button click, activate the element and then play track
+    if (window.player && typeof window.player.activateElement === 'function') {
+      const playButton = document.getElementById('play-track');
+      window.player.activateElement(playButton);
+    }
+    window.playTrack(window.lastScannedTrackUri);
+    document.getElementById('play-track').style.display = 'none';
+    document.getElementById('scan-next').style.display = 'inline-flex';
+  });
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scan-next').addEventListener('click', () => {
