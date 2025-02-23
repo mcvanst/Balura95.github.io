@@ -52,7 +52,7 @@ async function loadPlaylist() {
   }
 }
 
-// Wähle zufällig einen Track aus einem Array aus
+// Wähle einen zufälligen Track aus einem Array aus
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -73,7 +73,7 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Fehler-Listener (optional – hier nur loggen)
+    // Fehler-Listener (optional)
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -103,8 +103,8 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 
-              'Authorization': `Bearer ${token}`, 
+            headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -175,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Logout-Funktion
 function logout() {
     localStorage.clear();
     sessionStorage.clear();
@@ -184,7 +183,7 @@ function logout() {
   
   // Event Listener für den "App zurücksetzen"-Button
   document.addEventListener('DOMContentLoaded', () => {
-    const resetButton = document.getElementById('reset-app2');
+    const resetButton = document.getElementById('reset-app');
     if (resetButton) {
       resetButton.addEventListener('click', () => {
         if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
@@ -193,4 +192,3 @@ function logout() {
       });
     }
   });
-  
