@@ -102,3 +102,29 @@ body {
     }
   }
   
+  #soundwave {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    height: 40px; /* Gesamthöhe der Animation */
+  }
+  
+  #soundwave .bar {
+    width: 6px;
+    background-color: #2196F3;
+    animation: soundwave 1s infinite ease-in-out;
+  }
+  
+  /* Verzögerung für die einzelnen Balken */
+  #soundwave .bar:nth-child(1) { animation-delay: 0s; }
+  #soundwave .bar:nth-child(2) { animation-delay: 0.1s; }
+  #soundwave .bar:nth-child(3) { animation-delay: 0.2s; }
+  #soundwave .bar:nth-child(4) { animation-delay: 0.3s; }
+  #soundwave .bar:nth-child(5) { animation-delay: 0.4s; }
+  
+  @keyframes soundwave {
+    0%, 100% { height: 10px; }
+    50% { height: 35px; }
+  }
+  
