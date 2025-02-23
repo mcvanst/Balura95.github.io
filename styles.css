@@ -101,7 +101,15 @@ body {
       margin: 10px auto;
     }
   }
+
+
+  #soundwave-container {
+    margin-top: 10px; /* Abstand zum Titel */
+    /* Falls nötig, z-index anpassen, damit er hinter anderen Elementen liegt */
+    z-index: 1;
+  }
   
+
   #soundwave {
     display: flex;
     align-items: flex-end;

@@ -78,10 +78,17 @@ function stopQrScanner() {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // Instead of "Song läuft...", insert the animated soundwave:
-      const titleElement = document.getElementById('title');
-      if (titleElement) {
-        titleElement.innerHTML = `
+      
+      // Erstelle einen separaten Container für die Soundwave, falls nicht bereits vorhanden
+      let soundwaveContainer = document.getElementById('soundwave-container');
+      if (!soundwaveContainer) {
+        soundwaveContainer = document.createElement('div');
+        soundwaveContainer.id = 'soundwave-container';
+        // Füge diesen Container nach dem title-Element ein (oder an eine andere geeignete Stelle)
+        const titleElement = document.getElementById('title');
+        titleElement.parentNode.insertBefore(soundwaveContainer, titleElement.nextSibling);
+      }
+      soundwaveContainer.innerHTML = `
           <div id="soundwave">
             <div class="bar"></div>
             <div class="bar"></div>
@@ -91,20 +98,20 @@ function stopQrScanner() {
             <div class="bar"></div>
             <div class="bar"></div>
           </div>
-        `;
-        // Randomize each bar's animation on each iteration
-        const bars = document.querySelectorAll('#soundwave .bar');
-        bars.forEach(bar => {
+      `;
+      const bars = document.querySelectorAll('#soundwave .bar');
+      bars.forEach(bar => {
+        updateRandomAnimation(bar);
+        bar.addEventListener('animationiteration', () => {
           updateRandomAnimation(bar);
-          bar.addEventListener('animationiteration', () => {
-            updateRandomAnimation(bar);
-          });
         });
-      }
+      });
+      
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
 }
+
 
 function updateRandomAnimation(bar) {
   const newDelay = Math.random() * 0.5;          // random delay between 0 and 0.5s
