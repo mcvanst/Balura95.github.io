@@ -56,14 +56,11 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // On iOS, try autoplay first; if that doesn't work, the Play button will be visible.
+        // Auf iOS: Zeige den Play-Button, damit der Nutzer den Song abspielen kann
         if (isIOS()) {
-          window.playTrack(trackUri).then(success => {
-            if (!success) {
-              document.getElementById('play-track').style.display = 'inline-flex';
-            }
-          });
+          document.getElementById('play-track').style.display = 'inline-flex';
         } else {
+          // Auf Android: Autoplay
           window.playTrack(trackUri);
         }
       } else {
@@ -73,37 +70,42 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
-function generateSoundwaveHTML() {
-  let html = '<div id="soundwave">';
-  // Erstelle 7 Balken mit jeweils zufälligen Verzögerungen und Dauern
-  for (let i = 0; i < 7; i++) {
-    const delay = (Math.random() * 0.5).toFixed(2);         // Verzögerung zwischen 0 und 0.5s
-    const duration = (0.8 + Math.random() * 0.7).toFixed(2);  // Dauer zwischen 0.8 und 1.5s
-    html += `<div class="bar" style="animation-delay: ${delay}s; animation-duration: ${duration}s;"></div>`;
-  }
-  html += '</div>';
-  return html;
-}
-
 function stopQrScanner() {
   if (window.qrScanner) {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // Statt des statischen Texts "Song läuft..." wird hier die Soundwave-Animation eingefügt:
+      // Statt des statischen Textes "Song läuft..." wird hier die animierte Soundwave eingefügt:
       const titleElement = document.getElementById('title');
       if (titleElement) {
-        titleElement.innerHTML = generateSoundwaveHTML();
+        titleElement.innerHTML = `
+          <div id="soundwave">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+          </div>
+        `;
+        // Aktualisiere jeden Balken einmalig zufällig
+        const bars = document.querySelectorAll('#soundwave .bar');
+        bars.forEach(bar => {
+          updateRandomAnimation(bar);
+          bar.addEventListener('animationiteration', () => {
+            updateRandomAnimation(bar);
+          });
+        });
       }
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
 }
 
-
 function updateRandomAnimation(bar) {
-  const newDelay = Math.random() * 0.5;          // random delay between 0 and 0.5s
-  const newDuration = 0.8 + Math.random() * 0.7;   // random duration between 0.8 and 1.5s
+  const newDelay = Math.random() * 0.5;          // zufällige Verzögerung zwischen 0 und 0.5s
+  const newDuration = 0.8 + Math.random() * 0.7;   // zufällige Dauer zwischen 0.8 und 1.5s
   bar.style.animationDelay = `${newDelay}s`;
   bar.style.animationDuration = `${newDuration}s`;
 }
@@ -124,12 +126,13 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     name: 'Web Player',
     getOAuthToken: cb => { cb(token); }
   });
-  window.player = player; // Store globally for activateElement
+  window.player = player; // Global speichern für activateElement
+
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners – on error, fallback to deep linking (optional)
+  // Fehler-Listener: Bei Fehlern wird per Deep Link umgeleitet
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -167,7 +170,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return false;
     }
     
-    // On iOS, activateElement() is triggered by the Play button, so it should be called in its event handler.
+    // Auf iOS: activateElement() wird vom Play-Button ausgelöst (im Event-Handler)
     if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
       window.player.activateElement(playButton);
