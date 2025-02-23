@@ -33,7 +33,7 @@ function startQrScanner() {
   window.qrScannerActive = true;
   document.getElementById('qr-reader').style.display = 'block';
 
-  // Optionally update the title (static text or initial prompt)
+  // Update title (optional)
   const titleElement = document.getElementById('title');
   if (titleElement) {
     titleElement.textContent = 'QR Code scannen';
@@ -56,9 +56,13 @@ function startQrScanner() {
         window.lastScannedTrackUri = trackUri;
         M.toast({ html: "Song erfolgreich geladen", classes: "rounded", displayLength: 1000 });
         stopQrScanner();
-        // On iOS: Show the Play button; on Android: autoplay directly.
+        // On iOS, try autoplay first; if that doesn't work, the Play button will be visible.
         if (isIOS()) {
-          document.getElementById('play-track').style.display = 'inline-flex';
+          window.playTrack(trackUri).then(success => {
+            if (!success) {
+              document.getElementById('play-track').style.display = 'inline-flex';
+            }
+          });
         } else {
           window.playTrack(trackUri);
         }
@@ -74,7 +78,7 @@ function stopQrScanner() {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // Statt des Textes "Song läuft..." wird hier die Soundwave-Animation eingefügt.
+      // Instead of "Song läuft...", insert the animated soundwave:
       const titleElement = document.getElementById('title');
       if (titleElement) {
         titleElement.innerHTML = `
@@ -88,10 +92,25 @@ function stopQrScanner() {
             <div class="bar"></div>
           </div>
         `;
+        // Randomize each bar's animation on each iteration
+        const bars = document.querySelectorAll('#soundwave .bar');
+        bars.forEach(bar => {
+          updateRandomAnimation(bar);
+          bar.addEventListener('animationiteration', () => {
+            updateRandomAnimation(bar);
+          });
+        });
       }
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
+}
+
+function updateRandomAnimation(bar) {
+  const newDelay = Math.random() * 0.5;          // random delay between 0 and 0.5s
+  const newDuration = 0.8 + Math.random() * 0.7;   // random duration between 0.8 and 1.5s
+  bar.style.animationDelay = `${newDelay}s`;
+  bar.style.animationDuration = `${newDuration}s`;
 }
 
 // --- iOS Detection ---
@@ -110,14 +129,12 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     name: 'Web Player',
     getOAuthToken: cb => { cb(token); }
   });
-  // Global speichern, damit activateElement() genutzt werden kann
-  window.player = player;
-
+  window.player = player; // Store globally for activateElement
   player.addListener('ready', ({ device_id }) => {
     window.deviceId = device_id;
   });
   
-  // Error event listeners – Fallback: Bei Fehlern wird per Deep Link umgeleitet.
+  // Error event listeners – on error, fallback to deep linking (optional)
   player.addListener('initialization_error', ({ message }) => {
     console.error('Initialization Error:', message);
     window.location.href = window.lastScannedTrackUri;
@@ -155,7 +172,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       return false;
     }
     
-    // Bei iOS: activateElement() muss durch den Button-Klick aktiviert werden.
+    // On iOS, activateElement() is triggered by the Play button, so it should be called in its event handler.
     if (isIOS() && window.player && typeof window.player.activateElement === 'function') {
       const playButton = document.getElementById('play-track');
       window.player.activateElement(playButton);
