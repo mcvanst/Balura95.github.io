@@ -116,7 +116,7 @@ body {
     animation: soundwave 1s infinite ease-in-out;
   }
   
-  /* Keine feste Verzögerung, da diese durch JS zufällig gesetzt wird */
+  /* Die Keyframes bleiben gleich – die Zufallswerte werden in den Inline-Styles gesetzt */
   @keyframes soundwave {
     0%, 100% { height: 10px; }
     50% { height: 35px; }

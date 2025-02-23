@@ -73,38 +73,33 @@ function startQrScanner() {
   ).catch(err => console.error("QR code scanning failed:", err));
 }
 
+function generateSoundwaveHTML() {
+  let html = '<div id="soundwave">';
+  // Erstelle 7 Balken mit jeweils zufälligen Verzögerungen und Dauern
+  for (let i = 0; i < 7; i++) {
+    const delay = (Math.random() * 0.5).toFixed(2);         // Verzögerung zwischen 0 und 0.5s
+    const duration = (0.8 + Math.random() * 0.7).toFixed(2);  // Dauer zwischen 0.8 und 1.5s
+    html += `<div class="bar" style="animation-delay: ${delay}s; animation-duration: ${duration}s;"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
 function stopQrScanner() {
   if (window.qrScanner) {
     window.qrScanner.stop().then(() => {
       window.qrScannerActive = false;
       document.getElementById('qr-reader').style.display = 'none';
-      // Instead of "Song läuft...", insert the animated soundwave:
+      // Statt des statischen Texts "Song läuft..." wird hier die Soundwave-Animation eingefügt:
       const titleElement = document.getElementById('title');
       if (titleElement) {
-        titleElement.innerHTML = `
-          <div id="soundwave">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-          </div>
-        `;
-        // Randomize each bar's animation on each iteration
-        const bars = document.querySelectorAll('#soundwave .bar');
-        bars.forEach(bar => {
-          updateRandomAnimation(bar);
-          bar.addEventListener('animationiteration', () => {
-            updateRandomAnimation(bar);
-          });
-        });
+        titleElement.innerHTML = generateSoundwaveHTML();
       }
       document.getElementById('scan-next').style.display = 'block';
     }).catch(err => console.error("Error stopping QR scanner:", err));
   }
 }
+
 
 function updateRandomAnimation(bar) {
   const newDelay = Math.random() * 0.5;          // random delay between 0 and 0.5s
