@@ -75,21 +75,23 @@ function updatePlayerDisplay(playerName) {
   }
 }
 
-// Spotify: Lade gespeicherte Playlist-URL und Mitspieler-/Kategorien-Daten
-async function loadPlaylist() {
-  const playlistUrl = getStoredPlaylistUrl();
-  console.log("Stored Playlist URL:", playlistUrl);
-  const playlistId = extractPlaylistId(playlistUrl);
-  if (!playlistId) {
-    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const tracks = await fetchPlaylistTracks(playlistId);
-  if (tracks && tracks.length > 0) {
-    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
-    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-  } else {
-    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
+// Zeige das Overlay bei Spielende (wenn ein Spieler 10+ Punkte erreicht)
+function showGameOverOverlay() {
+  const overlay = document.getElementById('game-overlay');
+  const scoreTableBody = document.querySelector('#score-table tbody');
+  if (overlay && scoreTableBody) {
+    scoreTableBody.innerHTML = "";
+    for (let i = 0; i < mobilePlayers.length; i++) {
+      const row = document.createElement('tr');
+      const playerCell = document.createElement('td');
+      playerCell.textContent = mobilePlayers[i];
+      const scoreCell = document.createElement('td');
+      scoreCell.textContent = playerScores[i] || 0;
+      row.appendChild(playerCell);
+      row.appendChild(scoreCell);
+      scoreTableBody.appendChild(row);
+    }
+    overlay.style.display = 'flex';
   }
 }
 
@@ -117,6 +119,24 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
+// Funktion zum Laden der Playlist aus dem gespeicherten Wert
+async function loadPlaylist() {
+  const playlistUrl = getStoredPlaylistUrl();
+  console.log("Stored Playlist URL:", playlistUrl);
+  const playlistId = extractPlaylistId(playlistUrl);
+  if (!playlistId) {
+    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
+    return;
+  }
+  const tracks = await fetchPlaylistTracks(playlistId);
+  if (tracks && tracks.length > 0) {
+    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
+    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
+  } else {
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
+  }
+}
+
 // Funktion: Zufälligen Track aus dem Array auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
@@ -125,7 +145,7 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
 // Dabei wird der Songtitel so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
@@ -255,7 +275,7 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// DOMContentLoaded-Block für Event Listener
+// DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
@@ -268,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log("Geladene Kategorien:", mobileCategories);
   console.log("Geladene Mitspieler:", mobilePlayers);
   
-  // Initialisiere playerScores (für jeden Spieler, falls noch nicht vorhanden)
+  // Initialisiere playerScores (falls noch nicht vorhanden)
   if (!localStorage.getItem('playerScores')) {
     playerScores = new Array(mobilePlayers.length).fill(0);
     localStorage.setItem('playerScores', JSON.stringify(playerScores));
@@ -294,8 +314,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  // Playlist laden (aus gespeicherter URL)
+  // Playlist laden
   loadPlaylist();
+  
+  // Vor jedem Songstart: Reaktiviere die Bewertungsbuttons
+  const correctButton = document.getElementById('correct-button');
+  const wrongButton = document.getElementById('wrong-button');
+  if (correctButton && wrongButton) {
+    correctButton.disabled = false;
+    wrongButton.disabled = false;
+  }
   
   // Event Listener für den Play-Button
   const playButton = document.getElementById('play-button');
@@ -321,7 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
       updateCategoryDisplay(randomCategory);
-      // Aktualisiere die Songinfos-Box (zeigt initial nur "Songinfos")
       updateTrackDetails(randomItem.track, randomItem.added_by);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
@@ -349,29 +376,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Event Listener für den "Richtig"-Button (grünes Häkchen)
-  const correctButton = document.getElementById('correct-button');
-  if (correctButton) {
-    correctButton.addEventListener('click', () => {
-      // Erhöhe den Score des aktuellen Spielers um 1
+  const correctBtn = document.getElementById('correct-button');
+  if (correctBtn) {
+    correctBtn.addEventListener('click', () => {
+      correctBtn.disabled = true;
+      wrongBtn.disabled = true;
       playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
       localStorage.setItem('playerScores', JSON.stringify(playerScores));
       updateScoreDisplay();
-      // Prüfe, ob 10 Punkte erreicht wurden
       if (playerScores[currentPlayerIndex] >= 10) {
-        M.toast({ html: `Spiel beendet! ${mobilePlayers[currentPlayerIndex]} hat gewonnen!`, classes: "rounded", displayLength: 4000 });
-        // Optional: Deaktiviere weitere Eingaben
+        showGameOverOverlay();
       }
-      // Es erfolgt kein Wechsel zum nächsten Spieler
     });
   } else {
     console.error("correct-button not found");
   }
   
   // Event Listener für den "Falsch"-Button (rotes Kreuz)
-  const wrongButton = document.getElementById('wrong-button');
-  if (wrongButton) {
-    wrongButton.addEventListener('click', () => {
-      // Bei Falsch passiert nichts, der Score bleibt unverändert.
+  const wrongBtn = document.getElementById('wrong-button');
+  if (wrongBtn) {
+    wrongBtn.addEventListener('click', () => {
+      correctBtn.disabled = true;
+      wrongBtn.disabled = true;
     });
   } else {
     console.error("wrong-button not found");
@@ -388,7 +414,35 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     console.error("reset-app not found");
   }
+  
+  // Event Listener für den Overlay-Button (Spielende)
+  const overlayMenuBtn = document.getElementById('overlay-menu-btn');
+  if (overlayMenuBtn) {
+    overlayMenuBtn.addEventListener('click', () => {
+      window.location.href = 'menu.html';
+    });
+  }
 });
+
+// Funktion zum Anzeigen des Game Over Overlays
+function showGameOverOverlay() {
+  const overlay = document.getElementById('game-overlay');
+  const scoreTableBody = document.querySelector('#score-table tbody');
+  if (overlay && scoreTableBody) {
+    scoreTableBody.innerHTML = "";
+    for (let i = 0; i < mobilePlayers.length; i++) {
+      const row = document.createElement('tr');
+      const playerCell = document.createElement('td');
+      playerCell.textContent = mobilePlayers[i];
+      const scoreCell = document.createElement('td');
+      scoreCell.textContent = playerScores[i] || 0;
+      row.appendChild(playerCell);
+      row.appendChild(scoreCell);
+      scoreTableBody.appendChild(row);
+    }
+    overlay.style.display = 'flex';
+  }
+}
 
 // Logout-Funktion
 function logout() {

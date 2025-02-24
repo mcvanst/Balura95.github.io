@@ -22,7 +22,7 @@
       font-size: 18px;
       font-weight: bold;
     }
-    /* Container für die Richtig-/Falsch-Buttons als Flexbox */
+    /* Container für die Richtig-/Falsch-Buttons */
     #result-buttons {
       display: flex;
       justify-content: center;
@@ -39,6 +39,31 @@
       align-items: center;
       justify-content: center;
     }
+    /* Overlay für Spielende */
+    #game-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    #game-overlay table {
+      width: 80%;
+      margin-bottom: 20px;
+      border-collapse: collapse;
+    }
+    #game-overlay th, #game-overlay td {
+      border: 1px solid #fff;
+      padding: 8px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -51,15 +76,14 @@
     
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <!-- Keine Playlist-Eingabe mehr – wird über categories.html gesetzt -->
-        <!-- Buttons: Song abspielen und Stop Playback -->
+        <!-- Buttons: Song abspielen, Stop Playback -->
         <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           <i class="material-icons left">play_arrow</i> Song abspielen
         </button>
         <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;">
           <i class="material-icons left">stop</i> Stop Playback
         </button>
-        <!-- Richtig/Falsch Buttons -->
+        <!-- Container für die Bewertungsbuttons -->
         <div id="result-buttons">
           <button id="correct-button" class="btn waves-effect waves-light green">
             <i class="material-icons">check</i>
@@ -79,7 +103,24 @@
     </div>
   </div>
   
-  <!-- Reset Button fixed at the bottom center -->
+  <!-- Overlay für Spielende -->
+  <div id="game-overlay">
+    <h4>Spiel beendet!</h4>
+    <table id="score-table">
+      <thead>
+        <tr>
+          <th>Spieler</th>
+          <th>Punkte</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dynamisch erzeugt -->
+      </tbody>
+    </table>
+    <button id="overlay-menu-btn" class="btn-large waves-effect waves-light blue">Zurück zum Menü</button>
+  </div>
+  
+  <!-- Reset Button -->
   <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
   
   <!-- Materialize JS -->
