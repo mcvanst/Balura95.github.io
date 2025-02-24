@@ -9,7 +9,6 @@
   <!-- Google Fonts & Material Icons -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Custom CSS -->
   <style>
     body {
       overflow-y: auto;
@@ -71,7 +70,7 @@
         container.appendChild(div);
       });
       
-      // Weiter-Button speichert Playlist-URL und Kategorien in localStorage und leitet weiter zu categories2.html
+      // Weiter-Button: Speichert Playlist-URL und Kategorien in localStorage und leitet weiter zu categories2.html
       document.getElementById('next-button').addEventListener('click', () => {
         const playlistUrl = document.getElementById('playlist-url').value.trim();
         if (!playlistUrl) {
@@ -89,7 +88,6 @@
         // Kategorien sind optional – wenn leer, speichern wir einen leeren Array
         localStorage.setItem('mobileCategories', JSON.stringify(categories));
         
-        // Weiterleiten zu categories2.html
         window.location.href = 'categories2.html';
       });
     });

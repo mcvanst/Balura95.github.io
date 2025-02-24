@@ -9,7 +9,6 @@
   <!-- Google Fonts & Material Icons -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Custom CSS -->
   <style>
     body {
       overflow-y: auto;
@@ -36,7 +35,6 @@
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
         <h4 class="card-title">Mitspieler & Gewinnpunkte</h4>
-        <!-- Mitspieler-Eingabe -->
         <div id="players-container">
           <h5>Mitspieler</h5>
           <div class="input-field">
@@ -47,12 +45,10 @@
         <button id="add-player" class="btn waves-effect waves-light blue" style="margin-top:10px;">
           <i class="material-icons left">add</i> Mitspieler hinzufügen
         </button>
-        <!-- Gewinnpunkte-Eingabe -->
         <div class="input-field" style="margin-top:20px;">
           <input id="winning-score" type="number" min="1" placeholder="10">
           <label for="winning-score">Gewinnpunkte (z. B. 10)</label>
         </div>
-        <!-- Bestätigen -->
         <button id="confirm-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           Bestätigen
         </button>
@@ -64,7 +60,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Mitspieler hinzufügen
       document.getElementById('add-player').addEventListener('click', () => {
         const container = document.getElementById('players-container');
         const div = document.createElement('div');
@@ -73,7 +68,6 @@
         container.appendChild(div);
       });
       
-      // Bestätigen-Button: Speichert Mitspieler und Gewinnpunkte, initialisiert currentPlayerIndex und playerScores und leitet weiter zu mobil.html
       document.getElementById('confirm-button').addEventListener('click', () => {
         const playerInputs = document.querySelectorAll('.player-input');
         let players = [];
@@ -95,14 +89,12 @@
         }
         localStorage.setItem('winningScore', winningScore.toString());
         
-        // Setze den Mitspieler-Index auf 0 und initialisiere den Score-Array
         localStorage.setItem('currentPlayerIndex', "0");
         let playerScores = new Array(players.length).fill(0);
         localStorage.setItem('playerScores', JSON.stringify(playerScores));
         
         console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
         console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
-        // Weiterleitung zur mobil.html
         window.location.href = 'mobil.html';
       });
     });
