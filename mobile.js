@@ -251,7 +251,7 @@ let spotifySDKReady = new Promise((resolve) => {
         try {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
-            body: JSON.stringify({}),
+            body: JSON.stringify({}), // Leerer Body
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich und Score, Kategorie & Spieleranzeige ausgeblendet
+  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -391,6 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryDisplay(randomCategory);
     updateTrackDetails(randomItem.track, randomItem.added_by);
     await spotifySDKReady;
+    // iOS: activateElement auf dem Startbutton (der Klick zählt bereits als User-Interaktion)
+    if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
+      window.mobilePlayer.activateElement(document.getElementById('start-button'));
+    }
     const success = await window.playTrack(selectedTrackUri);
     if (!success) {
       M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
@@ -427,6 +431,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryDisplay(randomCategory);
     updateTrackDetails(randomItem.track, randomItem.added_by);
     await spotifySDKReady;
+    // iOS: activateElement auf dem "Nächster Song"-Button
+    if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
+      window.mobilePlayer.activateElement(document.getElementById('play-button'));
+    }
     const success = await window.playTrack(selectedTrackUri);
     if (!success) {
       M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
@@ -440,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = true;
   });
   
-  // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach wird "Nächster Song" aktiviert
+  // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach "Nächster Song" aktivieren
   const correctBtn = document.getElementById('correct-button');
   correctBtn.addEventListener('click', async () => {
     if (window.stopPlayback) await window.stopPlayback();
@@ -464,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = false;
   });
   
-  // Scoreboard-Overlay: Beim Klick auf den Button oben links öffnen
+  // Scoreboard-Overlay: Öffne bei Klick auf den Scoreboard-Button
   const scoreOverlay = document.getElementById('score-overlay');
   const closeScoreOverlay = document.getElementById('close-score-overlay');
   if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
@@ -503,8 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'menu.html';
   });
 });
-
-
 
 // Hilfsfunktion zur iOS-Erkennung
 function isIOS() {
