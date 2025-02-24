@@ -48,8 +48,9 @@ async function loadPlaylist() {
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-    // Zeige den Play-Button und Stop-Button an
+    // Zeige den Play-Button an
     document.getElementById('play-button').style.display = 'inline-flex';
+    // Zeige den Stop-Button ebenfalls an
     document.getElementById('stop-button').style.display = 'inline-flex';
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
@@ -63,27 +64,27 @@ function getRandomTrack(tracks) {
   return tracks[randomIndex];
 }
 
-// Aktualisiere die Anzeige der Songdetails (initial nur Titel; bei Klick vollständige Details)
-function updateTrackDetails(track) {
+// Aktualisiert die Track-Details-Box:
+// Initial zeigt sie "Songinfos" an. Beim Klick toggelt sie, um vollständige Details (Titel, Interpret, Erscheinungsjahr, hinzugefügt von) anzuzeigen.
+function updateTrackDetails(track, addedBy) {
   currentTrack = track;
   trackDetailsExpanded = false;
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
-    // Zeige zunächst nur den Titel an
-    detailsContainer.innerHTML = `<p id="track-title">Titel: ${track.name}</p>`;
+    detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
     detailsContainer.style.display = 'block';
-    // Beim Klick auf den Container toggeln zwischen nur Titel und vollständigen Details
     detailsContainer.onclick = function() {
       if (!trackDetailsExpanded) {
         const fullDetails = `
           <p id="track-title">Titel: ${track.name}</p>
           <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
           <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
+          <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
         `;
         detailsContainer.innerHTML = fullDetails;
         trackDetailsExpanded = true;
       } else {
-        detailsContainer.innerHTML = `<p id="track-title">Titel: ${track.name}</p>`;
+        detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
         trackDetailsExpanded = false;
       }
     };
@@ -123,7 +124,7 @@ let spotifySDKReady = new Promise((resolve) => {
         if (!token) return false;
         let waitTime = 0;
         while (!window.deviceId && waitTime < 10000) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(res => setTimeout(res, 200));
           waitTime += 200;
         }
         if (!window.deviceId) {
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error("cache-button not found");
   }
   
-  // Event Listener für den Play-Button (zum Abspielen eines zufälligen Songs)
+  // Event Listener für den Play-Button (zum direkten Abspielen eines zufälligen Songs)
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
@@ -192,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
         return;
       }
+      // Wähle einen neuen zufälligen Song aus
       const randomItem = getRandomTrack(cachedPlaylistTracks);
       console.log("Random Item:", randomItem);
       if (!randomItem || !randomItem.track) {
@@ -200,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
-      updateTrackDetails(randomItem.track);
+      // Aktualisiere die Songdetails-Box; übergebe hier auch added_by
+      updateTrackDetails(randomItem.track, randomItem.added_by);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
@@ -211,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error("play-button not found");
   }
   
-  // Event Listener für den Stop-Playback-Button
+  // Event Listener für den Stop-Button
   const stopButton = document.getElementById('stop-button');
   if (stopButton) {
     stopButton.addEventListener('click', async () => {
