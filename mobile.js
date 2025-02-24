@@ -75,13 +75,19 @@ function updatePlayerDisplay(playerName) {
   }
 }
 
-// Zeige das Overlay bei Spielende (wenn ein Spieler 10+ Punkte erreicht)
+// Zeige das Game-Over-Overlay inklusive Gewinner (mit Krone)
 function showGameOverOverlay() {
   const overlay = document.getElementById('game-overlay');
   const scoreTableBody = document.querySelector('#score-table tbody');
   if (overlay && scoreTableBody) {
     scoreTableBody.innerHTML = "";
+    let maxScore = -1;
+    let winnerIndex = -1;
     for (let i = 0; i < mobilePlayers.length; i++) {
+      if ((playerScores[i] || 0) > maxScore) {
+        maxScore = playerScores[i] || 0;
+        winnerIndex = i;
+      }
       const row = document.createElement('tr');
       const playerCell = document.createElement('td');
       playerCell.textContent = mobilePlayers[i];
@@ -91,8 +97,19 @@ function showGameOverOverlay() {
       row.appendChild(scoreCell);
       scoreTableBody.appendChild(row);
     }
+    // Gewinner anzeigen mit Krone (Material Icon "emoji_events")
+    const winnerHeading = document.getElementById('winner-heading');
+    if (winnerHeading && winnerIndex !== -1) {
+      winnerHeading.innerHTML = `<i class="material-icons">emoji_events</i> Gewinner: ${mobilePlayers[winnerIndex]}`;
+    }
     overlay.style.display = 'flex';
   }
+}
+
+// Lade die Gewinnpunktzahl aus localStorage
+function getWinningScore() {
+  const scoreStr = localStorage.getItem('winningScore');
+  return scoreStr ? parseInt(scoreStr, 10) : 10;
 }
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
@@ -119,7 +136,7 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion zum Laden der Playlist aus dem gespeicherten Wert
+// Funktion zum Laden der Playlist aus der gespeicherten URL
 async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
@@ -325,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wrongButton.disabled = false;
   }
   
-  // Event Listener für den "Nächster Song"-Button (ehemals play-button)
+  // Event Listener für den "Nächster Song"-Button
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
@@ -360,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nachdem ein Song gespielt wurde, wechseln wir zum nächsten Spieler:
+      // Nachdem ein Song gespielt wurde, wechseln wir zum nächsten Spieler
       currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
@@ -394,7 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
       playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
       localStorage.setItem('playerScores', JSON.stringify(playerScores));
       updateScoreDisplay();
-      if (playerScores[currentPlayerIndex] >= 10) {
+      // Prüfe, ob Gewinnpunktzahl erreicht wurde
+      const winningScore = getWinningScore();
+      if (playerScores[currentPlayerIndex] >= winningScore) {
         showGameOverOverlay();
       }
     });
@@ -433,6 +452,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Gewinnpunktzahl laden
+function getWinningScore() {
+  const scoreStr = localStorage.getItem('winningScore');
+  return scoreStr ? parseInt(scoreStr, 10) : 10;
+}
+
+// Spotify Web Playback SDK Setup (siehe oben) – Code bereits eingefügt
 
 // Logout-Funktion
 function logout() {

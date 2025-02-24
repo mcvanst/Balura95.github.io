@@ -10,7 +10,14 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      overflow-y: auto;
+    }
+    .input-field {
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
   <div class="container" style="margin-top:20px;">
@@ -21,7 +28,7 @@
           <input id="playlist-url" type="text" placeholder="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
           <label for="playlist-url">Playlist URL</label>
         </div>
-        <!-- Kategorien -->
+        <!-- Kategorien-Eingabe -->
         <div id="categories-container">
           <h5>Kategorien</h5>
           <div class="input-field">
@@ -32,7 +39,7 @@
         <button id="add-category" class="btn waves-effect waves-light blue" style="margin-top:10px;">
           <i class="material-icons left">add</i> Kategorie hinzufügen
         </button>
-        <!-- Mitspieler -->
+        <!-- Mitspieler-Eingabe -->
         <div id="players-container" style="margin-top:20px;">
           <h5>Mitspieler</h5>
           <div class="input-field">
@@ -43,6 +50,11 @@
         <button id="add-player" class="btn waves-effect waves-light blue" style="margin-top:10px;">
           <i class="material-icons left">add</i> Mitspieler hinzufügen
         </button>
+        <!-- Gewinnpunkte-Eingabe -->
+        <div class="input-field" style="margin-top:20px;">
+          <input id="winning-score" type="number" min="1" placeholder="10">
+          <label for="winning-score">Gewinnpunkte (z. B. 10)</label>
+        </div>
         <!-- Bestätigen -->
         <button id="confirm-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           Bestätigen
@@ -58,7 +70,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Kategorien hinzufügen
+      // Kategorie hinzufügen
       const addCatBtn = document.getElementById('add-category');
       addCatBtn.addEventListener('click', () => {
         const container = document.getElementById('categories-container');
@@ -113,12 +125,25 @@
           return;
         }
         localStorage.setItem('mobilePlayers', JSON.stringify(players));
-        // Setze den Mitspieler-Index auf 0
+
+        // Gewinnpunkte eingeben
+        const winningScoreInput = document.getElementById('winning-score').value.trim();
+        const winningScore = parseInt(winningScoreInput, 10);
+        if (isNaN(winningScore) || winningScore < 1) {
+          M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
+          return;
+        }
+        localStorage.setItem('winningScore', winningScore.toString());
+
+        // Setze den Mitspieler-Index auf 0 und initialisiere den Score-Array
         localStorage.setItem('currentPlayerIndex', "0");
+        let playerScores = new Array(players.length).fill(0);
+        localStorage.setItem('playerScores', JSON.stringify(playerScores));
 
         console.log("Gespeicherte Playlist URL:", localStorage.getItem('mobilePlaylistUrl'));
         console.log("Gespeicherte Kategorien:", localStorage.getItem('mobileCategories'));
         console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
+        console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
         // Weiterleitung zur mobil.html
         window.location.href = 'mobil.html';
       });
