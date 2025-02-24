@@ -162,8 +162,8 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
-// Dabei wird der Songtitel so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
+// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Der Songtitel wird so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
@@ -200,7 +200,7 @@ function updateCategoryDisplay(category) {
   }
 }
 
-// Spotify Web Playback SDK Setup – nur eine Deklaration von spotifySDKReady
+// Spotify Web Playback SDK Setup – nur eine einzige Deklaration von spotifySDKReady
 let spotifySDKReady = new Promise((resolve) => {
   window.onSpotifyWebPlaybackSDKReady = () => {
     const token = localStorage.getItem('access_token');
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log("Geladene Kategorien:", mobileCategories);
   console.log("Geladene Mitspieler:", mobilePlayers);
   
-  // Initialisiere playerScores, falls noch nicht vorhanden
+  // Initialisiere playerScores (falls noch nicht vorhanden)
   if (!localStorage.getItem('playerScores')) {
     playerScores = new Array(mobilePlayers.length).fill(0);
     localStorage.setItem('playerScores', JSON.stringify(playerScores));
@@ -333,15 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Vor jedem Songstart: Reaktiviere Bewertungsbuttons und setze "Nächster Song" und "Stop Playback" zurück
+  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" und "Stop Playback" aktiv
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
   const stopButton = document.getElementById('stop-button');
   if (correctButton && wrongButton && playButton && stopButton) {
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    // Beim allerersten Klick soll "Nächster Song" aktiv sein
+    correctButton.disabled = true;
+    wrongButton.disabled = true;
     playButton.disabled = false;
     stopButton.disabled = false;
   }
@@ -380,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nach Songstart: Bei der ersten Runde bleibt currentPlayerIndex = 0, danach inkrementieren
+      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach wird er inkrementiert
       if (!firstRound) {
         currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       } else {
@@ -389,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-      // Deaktiviere "Nächster Song" und "Stop Playback", bis eine Bewertung erfolgt
+      // Deaktiviere "Nächster Song" und "Stop Playback" bis zur Bewertung
       playButton.disabled = true;
       stopButton.disabled = true;
     });
@@ -467,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Spotify SDK-Setup (wird oben deklariert und initialisiert)
+// Spotify Web Playback SDK Setup – siehe oben, nur eine einzige Deklaration von spotifySDKReady existiert
 
 // Logout-Funktion
 function logout() {
