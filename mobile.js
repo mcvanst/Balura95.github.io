@@ -6,7 +6,7 @@ let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
 let firstRound = true;  // Für die erste Runde: Spieler 1 bleibt dran
-let isPaused = false;   // Status des Stop/Resume-Buttons
+let isPaused = false;   // Status für Pause/Resume
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -266,13 +266,14 @@ let spotifySDKReady = new Promise((resolve) => {
         }
       };
 
-      // Resume Playback: versucht die Wiedergabe fortzusetzen (ohne neue URI)
+      // Resume Playback: sende einen leeren JSON-Body, damit die Wiedergabe fortgesetzt wird
       window.resumePlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
         try {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
+            body: JSON.stringify({}), // Leerer Body
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -360,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Setze initial den Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" (playButton) und Stop/Resume-Button aktiv
+  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" (playButton) und Stop/Resume-Button aktiv (Stop-Button zeigt Pause-Icon)
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
@@ -368,10 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (correctButton && wrongButton && playButton && stopButton) {
     correctButton.disabled = true;
     wrongButton.disabled = true;
-    // Beim allerersten Mal aktiv
-    playButton.disabled = false;
+    playButton.disabled = false;  // Beim allerersten Mal aktiv
     stopButton.disabled = false;
-    // Initial: Stop-Button zeigt Pause-Icon
     stopButton.innerHTML = '<i class="material-icons">pause</i>';
   }
   
@@ -409,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nach Songstart: Bei der ersten Runde bleibt currentPlayerIndex = 0, danach inkrementieren
+      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach inkrementieren
       if (!firstRound) {
         currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       } else {
@@ -418,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-      // Nach Songstart: "Nächster Song" deaktivieren, Stop-Button bleibt aktiv
+      // Nach Songstart: "Nächster Song" deaktivieren, Stop/Resume-Button bleibt aktiv
       playButton.disabled = true;
     });
   } else {
@@ -448,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
             M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
           }
         } else {
+          // Falls resumePlayback nicht definiert – versuche playTrack erneut
           const resumed = await window.playTrack(selectedTrackUri);
           if (resumed) {
             M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
@@ -474,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (playerScores[currentPlayerIndex] >= winningScore) {
         showGameOverOverlay();
       }
-      // Nach Bewertung: Reaktiviere "Nächster Song" und "Stop Playback"
+      // Nach Bewertung: Reaktiviere "Nächster Song" und Stop/Resume-Button
       playButton.disabled = false;
       stopButton.disabled = false;
     });
@@ -517,12 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Spotify SDK Setup – Die Deklaration von spotifySDKReady erfolgt nur einmal oben
-
-// Hilfsfunktion zur iOS-Erkennung (falls benötigt)
+// Hilfsfunktion zur iOS-Erkennung
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
+
+// Spotify Web Playback SDK Setup – nur eine einzige Deklaration von spotifySDKReady (bereits oben)
 
 // Logout-Funktion
 function logout() {
