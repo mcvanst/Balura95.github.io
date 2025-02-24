@@ -5,11 +5,16 @@ let currentTrack = null;
 let trackDetailsExpanded = false;
 let mobileCategories = [];
 
-// Funktion zum Extrahieren der Playlist-ID aus der URL
+// Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match ? match[1] : null;
+}
+
+// Liest die gespeicherte Playlist-URL aus categories.html
+function getStoredPlaylistUrl() {
+  return localStorage.getItem('mobilePlaylistUrl') || "";
 }
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
@@ -38,7 +43,7 @@ async function fetchPlaylistTracks(playlistId) {
 
 // Funktion zum Laden der Playlist aus dem gespeicherten Wert
 async function loadPlaylist() {
-  const playlistUrl = localStorage.getItem('mobilePlaylistUrl') || "";
+  const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
   if (!playlistId) {
@@ -54,38 +59,48 @@ async function loadPlaylist() {
   }
 }
 
-// Wähle einen zufälligen Track aus dem Array aus
+// Funktion, die einen zufälligen Track auswählt
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
   return tracks[randomIndex];
 }
 
-// Aktualisiert die Trackdetails-Box
-function updateTrackDetails(track, category) {
-  currentTrack = track;
-  trackDetailsExpanded = false;
+// Aktualisiert die Box für Songdetails (nur Songinfos) und die Kategorie-Box separat
+function updateTrackDetails(track) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
-    detailsContainer.innerHTML = `<p id="track-info">Songinfos – Kategorie: ${category}</p>`;
+    detailsContainer.innerHTML = `
+      <p id="track-info">Songinfos</p>
+      <p id="track-title">Titel: ${track.name}</p>
+      <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
+      <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
+      <p id="track-added">Hinzugefügt von: ${track.added_by ? track.added_by.id : "unbekannt"}</p>
+    `;
     detailsContainer.style.display = 'block';
-    detailsContainer.onclick = function() {
-      if (!trackDetailsExpanded) {
-        const fullDetails = `
-          <p id="track-title">Titel: ${track.name}</p>
-          <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
-          <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
-          <p id="track-added">Hinzugefügt von: ${track.added_by ? track.added_by.id : "unbekannt"}</p>
-          <p id="track-category">Kategorie: ${category}</p>
-        `;
-        detailsContainer.innerHTML = fullDetails;
-        trackDetailsExpanded = true;
-      } else {
-        detailsContainer.innerHTML = `<p id="track-info">Songinfos – Kategorie: ${category}</p>`;
-        trackDetailsExpanded = false;
-      }
-    };
   }
+}
+
+function updateCategoryDisplay(category) {
+  const catContainer = document.getElementById('category-display');
+  if (catContainer) {
+    catContainer.innerHTML = `<p id="category-info">Kategorie: ${category}</p>`;
+    catContainer.style.display = 'block';
+  }
+}
+
+// Lade Kategorien aus localStorage (aus categories.html)
+function loadCategories() {
+  const catStr = localStorage.getItem('mobileCategories');
+  if (catStr) {
+    try {
+      return JSON.parse(catStr);
+    } catch (e) {
+      console.error("Error parsing categories:", e);
+      return [];
+    }
+  }
+  return [];
 }
 
 // Promise, das aufgelöst wird, sobald der Spotify SDK bereit ist
@@ -102,7 +117,7 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Optionale Fehler-Listener
+    // Fehler-Listener (optional)
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -116,7 +131,6 @@ let spotifySDKReady = new Promise((resolve) => {
       console.error('Playback Error:', message);
     });
     player.connect().then(() => {
-      // Definiere window.playTrack
       window.playTrack = async function(trackUri) {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
@@ -134,7 +148,7 @@ let spotifySDKReady = new Promise((resolve) => {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
             headers: { 
-              'Authorization': `Bearer ${token}`, 
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -155,7 +169,6 @@ let spotifySDKReady = new Promise((resolve) => {
         }
       };
 
-      // Definiere window.stopPlayback
       window.stopPlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
@@ -163,7 +176,7 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
             method: 'PUT',
             headers: { 
-              'Authorization': `Bearer ${token}`, 
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -182,30 +195,18 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// Konsolidierter DOMContentLoaded-Block für alle Event Listener
+// DOMContentLoaded-Block
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
   
-  // Zeige gespeicherte Playlist-URL an, falls vorhanden
-  const playlistDisplay = document.getElementById('playlist-display');
-  const storedPlaylistUrl = localStorage.getItem('mobilePlaylistUrl');
-  if (playlistDisplay && storedPlaylistUrl) {
-    playlistDisplay.textContent = "Gespeicherte Playlist: " + storedPlaylistUrl;
-  }
-  
   // Lade Kategorien aus localStorage
-  // (Diese Funktion müsste in categories.html gesetzt worden sein)
-  try {
-    mobileCategories = JSON.parse(localStorage.getItem('mobileCategories')) || [];
-  } catch (e) {
-    mobileCategories = [];
-  }
+  mobileCategories = loadCategories();
   console.log("Geladene Kategorien:", mobileCategories);
   
-  // AudioContext aktivieren (iOS)
+  // Aktiviere den AudioContext (iOS)
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
       const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -214,23 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  // Lade die Playlist (aus dem gespeicherten Wert)
+  // Lade die Playlist
   loadPlaylist();
   
-  // Event Listener für den "Playlist einlesen"-Button
-  const cacheButton = document.getElementById('cache-button');
-  if (cacheButton) {
-    cacheButton.addEventListener('click', loadPlaylist);
-  } else {
-    console.error("cache-button not found");
-  }
-  
-  // Event Listener für den Play-Button (zum direkten Abspielen eines zufälligen Songs)
+  // Event Listener für den Play-Button
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
       if (!cachedPlaylistTracks) {
-        M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
+        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
         return;
       }
       const randomItem = getRandomTrack(cachedPlaylistTracks);
@@ -248,7 +241,9 @@ document.addEventListener('DOMContentLoaded', () => {
         randomCategory = mobileCategories[randomIndex];
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
-      updateTrackDetails(randomItem.track, randomCategory);
+      // Aktualisiere die Songdetails und das separate Kategorie-Feld
+      updateTrackDetails(randomItem.track);
+      updateCategoryDisplay(randomCategory);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {

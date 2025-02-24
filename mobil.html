@@ -19,21 +19,10 @@
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
         <h4 class="card-title">Mobiles Spiel – Zufallsplaylist</h4>
-        <!-- Anzeige der gespeicherten Playlist URL -->
-        <p id="playlist-display"></p>
-        <div class="input-field">
-          <input id="playlist-url" type="text" placeholder="Playlist URL">
-          <label for="playlist-url">Playlist URL</label>
-        </div>
-        <!-- Button zum Einlesen der Playlist -->
-        <button id="cache-button" class="btn-large waves-effect waves-light orange">
-          <i class="material-icons left">library_music</i> Playlist einlesen
-        </button>
-        <!-- Play-Button zum Abspielen eines zufälligen Songs -->
+        <!-- Buttons: Nur Song abspielen und Stop Playback -->
         <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           <i class="material-icons left">play_arrow</i> Song abspielen
         </button>
-        <!-- Stop Playback Button -->
         <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;">
           <i class="material-icons left">stop</i> Stop Playback
         </button>
@@ -42,9 +31,13 @@
         <a href="menu.html" class="btn-large waves-effect waves-light blue">Zurück zum Menü</a>
       </div>
     </div>
-    <!-- Box für Songdetails -->
+    <!-- Box für Songdetails (nur Songinfos) -->
     <div id="track-details" class="card z-depth-1" style="display:none; margin-top:20px; padding:10px; cursor:pointer;">
       <p id="track-info">Songinfos</p>
+    </div>
+    <!-- Extra Box für Kategorie -->
+    <div id="category-display" class="card z-depth-1" style="display:none; margin-top:20px; padding:10px;">
+      <p id="category-info">Kategorie:</p>
     </div>
   </div>
   
