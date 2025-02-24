@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kategorien, Playlist & Mitspieler</title>
+  <title>Mitspieler & Gewinnpunkte</title>
   <!-- Materialize CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
   <!-- Google Fonts & Material Icons -->
@@ -22,7 +22,6 @@
     .input-field {
       margin-bottom: 10px;
     }
-    /* Fade-In Animation */
     .fade-in {
       animation: fadeIn 1s ease-out forwards;
       opacity: 0;
@@ -36,24 +35,9 @@
   <div class="container" style="margin-top:20px;">
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <h4 class="card-title">Playlist, Kategorien & Mitspieler</h4>
-        <div class="input-field">
-          <input id="playlist-url" type="text" placeholder="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
-          <label for="playlist-url">Playlist URL</label>
-        </div>
-        <!-- Kategorien-Eingabe -->
-        <div id="categories-container">
-          <h5>Kategorien</h5>
-          <div class="input-field">
-            <input class="category-input" type="text" placeholder="Kategorie 1">
-            <label>Kategorie</label>
-          </div>
-        </div>
-        <button id="add-category" class="btn waves-effect waves-light blue" style="margin-top:10px;">
-          <i class="material-icons left">add</i> Kategorie hinzufügen
-        </button>
+        <h4 class="card-title">Mitspieler & Gewinnpunkte</h4>
         <!-- Mitspieler-Eingabe -->
-        <div id="players-container" style="margin-top:20px;">
+        <div id="players-container">
           <h5>Mitspieler</h5>
           <div class="input-field">
             <input class="player-input" type="text" placeholder="Mitspieler 1">
@@ -73,9 +57,6 @@
           Bestätigen
         </button>
       </div>
-      <div class="card-action">
-        <a href="menu.html" class="btn-large waves-effect waves-light orange">Zurück zum Menü</a>
-      </div>
     </div>
   </div>
   
@@ -83,47 +64,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Kategorie hinzufügen
-      const addCatBtn = document.getElementById('add-category');
-      addCatBtn.addEventListener('click', () => {
-        const container = document.getElementById('categories-container');
-        const div = document.createElement('div');
-        div.className = 'input-field';
-        div.innerHTML = '<input class="category-input" type="text" placeholder="Neue Kategorie"><label>Kategorie</label>';
-        container.appendChild(div);
-      });
-
       // Mitspieler hinzufügen
-      const addPlayerBtn = document.getElementById('add-player');
-      addPlayerBtn.addEventListener('click', () => {
+      document.getElementById('add-player').addEventListener('click', () => {
         const container = document.getElementById('players-container');
         const div = document.createElement('div');
         div.className = 'input-field';
         div.innerHTML = '<input class="player-input" type="text" placeholder="Neuer Mitspieler"><label>Mitspieler</label>';
         container.appendChild(div);
       });
-
-      // Bestätigen-Button
-      const confirmBtn = document.getElementById('confirm-button');
-      confirmBtn.addEventListener('click', () => {
-        const playlistUrl = document.getElementById('playlist-url').value.trim();
-        if (!playlistUrl) {
-          M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
-          return;
-        }
-        localStorage.setItem('mobilePlaylistUrl', playlistUrl);
-
-        // Kategorien sammeln (optional)
-        const catInputs = document.querySelectorAll('.category-input');
-        let categories = [];
-        catInputs.forEach(input => {
-          const value = input.value.trim();
-          if (value) categories.push(value);
-        });
-        // Kategorien können auch leer sein
-        localStorage.setItem('mobileCategories', JSON.stringify(categories));
-
-        // Mitspieler sammeln
+      
+      // Bestätigen-Button: Speichert Mitspieler und Gewinnpunkte, initialisiert currentPlayerIndex und playerScores und leitet weiter zu mobil.html
+      document.getElementById('confirm-button').addEventListener('click', () => {
         const playerInputs = document.querySelectorAll('.player-input');
         let players = [];
         playerInputs.forEach(input => {
@@ -135,8 +86,7 @@
           return;
         }
         localStorage.setItem('mobilePlayers', JSON.stringify(players));
-
-        // Gewinnpunkte eingeben
+        
         const winningScoreInput = document.getElementById('winning-score').value.trim();
         const winningScore = parseInt(winningScoreInput, 10);
         if (isNaN(winningScore) || winningScore < 1) {
@@ -144,14 +94,12 @@
           return;
         }
         localStorage.setItem('winningScore', winningScore.toString());
-
+        
         // Setze den Mitspieler-Index auf 0 und initialisiere den Score-Array
         localStorage.setItem('currentPlayerIndex', "0");
         let playerScores = new Array(players.length).fill(0);
         localStorage.setItem('playerScores', JSON.stringify(playerScores));
-
-        console.log("Gespeicherte Playlist URL:", localStorage.getItem('mobilePlaylistUrl'));
-        console.log("Gespeicherte Kategorien:", localStorage.getItem('mobileCategories'));
+        
         console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
         console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
         // Weiterleitung zur mobil.html

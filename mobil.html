@@ -69,18 +69,18 @@
 <body>
   <div id="score-display">Score: 0</div>
   <div class="container" style="margin-top:20px;">
-    <!-- Überschrift für die zufällig ausgewählte Kategorie -->
+    <!-- Überschrift für zufällig ausgewählte Kategorie -->
     <h5 id="category-heading" style="text-align:center; margin-bottom:10px;"></h5>
     <!-- Anzeige des aktuellen Mitspielers -->
     <h5 id="player-turn" style="text-align:center; margin-bottom:20px;"></h5>
     
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <!-- Button "Nächster Song" -->
-        <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
+        <!-- Button "Nächster Song" (umbenannt) -->
+        <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;" disabled>
           <i class="material-icons left">skip_next</i> Nächster Song
         </button>
-        <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;">
+        <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;" disabled>
           <i class="material-icons left">stop</i> Stop Playback
         </button>
         <!-- Bewertungsbuttons -->
@@ -92,9 +92,6 @@
             <i class="material-icons">close</i>
           </button>
         </div>
-      </div>
-      <div class="card-action">
-        <a href="menu.html" class="btn-large waves-effect waves-light blue">Zurück zum Menü</a>
       </div>
     </div>
     <!-- Box für Songinfos: Zeigt initial "Songinfos" an, toggelt bei Klick -->

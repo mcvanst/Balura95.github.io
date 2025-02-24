@@ -5,7 +5,7 @@ let mobileCategories = [];
 let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;  // Neue Variable: Für die erste Runde
+let firstRound = true;  // Für die erste Runde
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -14,12 +14,12 @@ function extractPlaylistId(url) {
   return match ? match[1] : null;
 }
 
-// Liefert die gespeicherte Playlist-URL (wird in categories.html gesetzt)
+// Liefert die gespeicherte Playlist-URL
 function getStoredPlaylistUrl() {
   return localStorage.getItem('mobilePlaylistUrl') || "";
 }
 
-// Lade gespeicherte Kategorien aus localStorage
+// Lade gespeicherte Kategorien
 function loadCategories() {
   const catStr = localStorage.getItem('mobileCategories');
   if (catStr) {
@@ -33,7 +33,7 @@ function loadCategories() {
   return [];
 }
 
-// Lade gespeicherte Mitspieler aus localStorage
+// Lade gespeicherte Mitspieler
 function loadPlayers() {
   const playersStr = localStorage.getItem('mobilePlayers');
   if (playersStr) {
@@ -47,18 +47,18 @@ function loadPlayers() {
   return [];
 }
 
-// Lade aktuellen Spieler-Index aus localStorage (oder setze 0)
+// Lade aktuellen Spieler-Index
 function loadCurrentPlayerIndex() {
   const index = localStorage.getItem('currentPlayerIndex');
   return index ? parseInt(index) : 0;
 }
 
-// Speichere aktuellen Spieler-Index in localStorage
+// Speichere aktuellen Spieler-Index
 function saveCurrentPlayerIndex(index) {
   localStorage.setItem('currentPlayerIndex', index.toString());
 }
 
-// Aktualisiere die Scoreanzeige (oben rechts)
+// Aktualisiere Scoreanzeige (oben rechts)
 function updateScoreDisplay() {
   const scoreDisplay = document.getElementById('score-display');
   const currentPlayer = mobilePlayers[currentPlayerIndex] || "Unbekannt";
@@ -68,7 +68,7 @@ function updateScoreDisplay() {
   }
 }
 
-// Aktualisiere den Mitspieler-Header (unterhalb der Kategorie)
+// Aktualisiere Mitspieler-Anzeige (unterhalb der Kategorie)
 function updatePlayerDisplay(playerName) {
   const playerTurn = document.getElementById('player-turn');
   if (playerTurn) {
@@ -76,7 +76,7 @@ function updatePlayerDisplay(playerName) {
   }
 }
 
-// Zeige das Game-Over-Overlay inklusive Gewinner (mit Krone)
+// Zeige Game-Over-Overlay mit Gewinner (mit Krone)
 function showGameOverOverlay() {
   const overlay = document.getElementById('game-overlay');
   const scoreTableBody = document.querySelector('#score-table tbody');
@@ -154,7 +154,7 @@ async function loadPlaylist() {
   }
 }
 
-// Funktion: Zufälligen Track auswählen
+// Zufälligen Track aus dem Array auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -162,7 +162,7 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
 // Der Songtitel wird bearbeitet, sodass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
@@ -196,7 +196,6 @@ function updateTrackDetails(track, addedBy) {
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
-    // Falls keine Kategorie vorhanden, wird "Keine Kategorie" angezeigt
     categoryHeading.textContent = "Kategorie: " + (category || "Keine Kategorie");
   }
 }
@@ -215,7 +214,6 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Optionale Fehler-Listener
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -335,27 +333,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Vor jedem Songstart: Reaktiviere Bewertungsbuttons
+  // Vor jedem Songstart: Reaktiviere Bewertungsbuttons und deaktiviere "Nächster Song" und "Stop Playback"
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
-  if (correctButton && wrongButton) {
+  const playButton = document.getElementById('play-button');
+  const stopButton = document.getElementById('stop-button');
+  if (correctButton && wrongButton && playButton && stopButton) {
     correctButton.disabled = false;
     wrongButton.disabled = false;
+    playButton.disabled = true;
+    stopButton.disabled = true;
   }
   
   // Event Listener für den "Nächster Song"-Button
-  const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
       if (!cachedPlaylistTracks) {
         M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
         return;
       }
-      // Reaktiviere Bewertungsbuttons für die neue Runde
+      // Vor Songstart: Deaktiviere Bewertungsbuttons
       if (correctButton && wrongButton) {
         correctButton.disabled = false;
         wrongButton.disabled = false;
       }
+      // Wähle einen zufälligen Song
       const randomItem = getRandomTrack(cachedPlaylistTracks);
       console.log("Random Item:", randomItem);
       if (!randomItem || !randomItem.track) {
@@ -364,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
-      // Wähle zufällig eine Kategorie aus (optional, falls keine vorhanden, dann leer)
+      // Wähle zufällig eine Kategorie (optional)
       let randomCategory = "";
       if (mobileCategories && mobileCategories.length > 0) {
         const randomIndex = Math.floor(Math.random() * mobileCategories.length);
@@ -378,7 +380,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nach Songstart: Wechsel zum nächsten Spieler (außer in der ersten Runde)
+      // Nach Songstart: Aktivieren der Bewertungsbuttons (werden über Rating aktiviert)
+      // Wechsel zum nächsten Spieler (außer in der ersten Runde)
       if (!firstRound) {
         currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       } else {
@@ -387,13 +390,15 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+      // Nachdem der Song gestartet wurde, schalten wir "Nächster Song" und "Stop Playback" aus, bis eine Bewertung erfolgt.
+      playButton.disabled = true;
+      stopButton.disabled = true;
     });
   } else {
     console.error("play-button not found");
   }
   
   // Event Listener für den Stop-Button
-  const stopButton = document.getElementById('stop-button');
   if (stopButton) {
     stopButton.addEventListener('click', async () => {
       if (window.stopPlayback) {
@@ -420,6 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (playerScores[currentPlayerIndex] >= winningScore) {
         showGameOverOverlay();
       }
+      // Nach Bewertung: Reaktiviere die "Nächster Song" und "Stop Playback" Buttons
+      playButton.disabled = false;
+      stopButton.disabled = false;
     });
   } else {
     console.error("correct-button not found");
@@ -431,6 +439,9 @@ document.addEventListener('DOMContentLoaded', () => {
     wrongBtn.addEventListener('click', () => {
       correctBtn.disabled = true;
       wrongBtn.disabled = true;
+      // Keine Scoreänderung, aber Buttons wieder aktivieren
+      playButton.disabled = false;
+      stopButton.disabled = false;
     });
   } else {
     console.error("wrong-button not found");

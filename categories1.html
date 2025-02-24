@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kategorien & Playlist</title>
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Google Fonts & Material Icons -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    body {
+      overflow-y: auto;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .input-field {
+      margin-bottom: 10px;
+    }
+    .fade-in {
+      animation: fadeIn 1s ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="margin-top:20px;">
+    <div class="card z-depth-3 center-align fade-in">
+      <div class="card-content">
+        <h4 class="card-title">Playlist & Kategorien</h4>
+        <div class="input-field">
+          <input id="playlist-url" type="text" placeholder="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
+          <label for="playlist-url">Playlist URL</label>
+        </div>
+        <div id="categories-container">
+          <h5>Kategorien (optional)</h5>
+          <div class="input-field">
+            <input class="category-input" type="text" placeholder="Kategorie 1">
+            <label>Kategorie</label>
+          </div>
+        </div>
+        <button id="add-category" class="btn waves-effect waves-light blue" style="margin-top:10px;">
+          <i class="material-icons left">add</i> Kategorie hinzufügen
+        </button>
+        <!-- Weiter-Button leitet zu categories2.html weiter -->
+        <button id="next-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
+          Weiter
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Materialize JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Kategorie hinzufügen
+      document.getElementById('add-category').addEventListener('click', () => {
+        const container = document.getElementById('categories-container');
+        const div = document.createElement('div');
+        div.className = 'input-field';
+        div.innerHTML = '<input class="category-input" type="text" placeholder="Neue Kategorie"><label>Kategorie</label>';
+        container.appendChild(div);
+      });
+      
+      // Weiter-Button speichert Playlist-URL und Kategorien in localStorage und leitet weiter zu categories2.html
+      document.getElementById('next-button').addEventListener('click', () => {
+        const playlistUrl = document.getElementById('playlist-url').value.trim();
+        if (!playlistUrl) {
+          M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
+          return;
+        }
+        localStorage.setItem('mobilePlaylistUrl', playlistUrl);
+        
+        const catInputs = document.querySelectorAll('.category-input');
+        let categories = [];
+        catInputs.forEach(input => {
+          const value = input.value.trim();
+          if (value) categories.push(value);
+        });
+        // Kategorien sind optional – wenn leer, speichern wir einen leeren Array
+        localStorage.setItem('mobileCategories', JSON.stringify(categories));
+        
+        // Weiterleiten zu categories2.html
+        window.location.href = 'categories2.html';
+      });
+    });
+  </script>
+</body>
+</html>
