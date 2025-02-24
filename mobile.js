@@ -1,9 +1,9 @@
 // Globale Variablen
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
-let currentTrack = null;
-let trackDetailsExpanded = false;
 let mobileCategories = [];
+let mobilePlayers = [];
+let currentPlayerIndex = 0;
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -17,7 +17,7 @@ function getStoredPlaylistUrl() {
   return localStorage.getItem('mobilePlaylistUrl') || "";
 }
 
-// Lade die gespeicherten Kategorien aus localStorage
+// Lade gespeicherte Kategorien aus localStorage
 function loadCategories() {
   const catStr = localStorage.getItem('mobileCategories');
   if (catStr) {
@@ -29,6 +29,31 @@ function loadCategories() {
     }
   }
   return [];
+}
+
+// Lade gespeicherte Mitspieler aus localStorage
+function loadPlayers() {
+  const playersStr = localStorage.getItem('mobilePlayers');
+  if (playersStr) {
+    try {
+      return JSON.parse(playersStr);
+    } catch (e) {
+      console.error("Error parsing players:", e);
+      return [];
+    }
+  }
+  return [];
+}
+
+// Lade aktuellen Spieler-Index aus localStorage (oder setze 0)
+function loadCurrentPlayerIndex() {
+  const index = localStorage.getItem('currentPlayerIndex');
+  return index ? parseInt(index) : 0;
+}
+
+// Speichere aktuellen Spieler-Index in localStorage
+function saveCurrentPlayerIndex(index) {
+  localStorage.setItem('currentPlayerIndex', index.toString());
 }
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
@@ -80,21 +105,20 @@ function getRandomTrack(tracks) {
   return tracks[randomIndex];
 }
 
-// Aktualisiert die Songinfos-Box.
-// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Aktualisiere die Songinfos-Box: Zuerst nur "Songinfos", toggelt bei Klick.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
-    // Entferne alles ab dem ersten Bindestrich aus dem Songtitel
+    // Entferne ab dem ersten Bindestrich den Rest des Titels
     let title = track.name;
     if (title.includes("-")) {
       title = title.split("-")[0].trim();
     }
     detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
     detailsContainer.style.display = 'block';
-    trackDetailsExpanded = false;
+    let expanded = false;
     detailsContainer.onclick = function() {
-      if (!trackDetailsExpanded) {
+      if (!expanded) {
         const fullDetails = `
           <p id="track-title">Titel: ${title}</p>
           <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
@@ -102,20 +126,28 @@ function updateTrackDetails(track, addedBy) {
           <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
         `;
         detailsContainer.innerHTML = fullDetails;
-        trackDetailsExpanded = true;
+        expanded = true;
       } else {
         detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
-        trackDetailsExpanded = false;
+        expanded = false;
       }
     };
   }
 }
 
-// Aktualisiert den Kategorie-Header (ganz oben)
+// Aktualisiere den Kategorie-Header (ganz oben)
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
     categoryHeading.textContent = "Kategorie: " + category;
+  }
+}
+
+// Aktualisiere die Anzeige des aktuellen Mitspielers (unterhalb der Kategorie)
+function updatePlayerDisplay(playerName) {
+  const playerTurn = document.getElementById('player-turn');
+  if (playerTurn) {
+    playerTurn.textContent = "Spieler: " + playerName;
   }
 }
 
@@ -218,9 +250,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   
-  // Lade gespeicherte Kategorien aus localStorage
+  // Lade Kategorien und Mitspieler
   mobileCategories = loadCategories();
+  mobilePlayers = loadPlayers();
   console.log("Geladene Kategorien:", mobileCategories);
+  console.log("Geladene Mitspieler:", mobilePlayers);
+  
+  // Lade aktuellen Spieler-Index (oder setze auf 0)
+  currentPlayerIndex = loadCurrentPlayerIndex();
   
   // Aktiviere AudioContext (iOS)
   document.addEventListener('touchstart', function resumeAudioContext() {
@@ -242,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
         return;
       }
+      // Wähle immer einen neuen zufälligen Song aus
       const randomItem = getRandomTrack(cachedPlaylistTracks);
       console.log("Random Item:", randomItem);
       if (!randomItem || !randomItem.track) {
@@ -257,9 +295,19 @@ document.addEventListener('DOMContentLoaded', () => {
         randomCategory = mobileCategories[randomIndex];
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
-      // Aktualisiere die getrennten Boxen: Songinfos und Kategorie
-      updateTrackDetails(randomItem.track, randomItem.added_by);
+      // Aktualisiere den Kategorie-Header
       updateCategoryDisplay(randomCategory);
+      // Bestimme den nächsten Mitspieler (rundenweise)
+      let currentPlayer = "";
+      if (mobilePlayers && mobilePlayers.length > 0) {
+        currentPlayer = mobilePlayers[currentPlayerIndex];
+        currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
+        saveCurrentPlayerIndex(currentPlayerIndex);
+      }
+      console.log("Aktueller Spieler:", currentPlayer);
+      updatePlayerDisplay(currentPlayer);
+      // Aktualisiere die Songinfos-Box (nur "Songinfos", erweiterbar bei Klick)
+      updateTrackDetails(randomItem.track, randomItem.added_by);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
@@ -297,6 +345,38 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error("reset-app not found");
   }
 });
+
+// Aktualisiert den Mitspieler-Header (unterhalb der Kategorie)
+function updatePlayerDisplay(playerName) {
+  const playerTurn = document.getElementById('player-turn');
+  if (playerTurn) {
+    playerTurn.textContent = "Spieler: " + playerName;
+  }
+}
+
+// Laden der Mitspieler aus localStorage
+function loadPlayers() {
+  const playersStr = localStorage.getItem('mobilePlayers');
+  if (playersStr) {
+    try {
+      return JSON.parse(playersStr);
+    } catch (e) {
+      console.error("Error parsing players:", e);
+      return [];
+    }
+  }
+  return [];
+}
+
+// Laden und Speichern des aktuellen Spieler-Index
+function loadCurrentPlayerIndex() {
+  const index = localStorage.getItem('currentPlayerIndex');
+  return index ? parseInt(index) : 0;
+}
+
+function saveCurrentPlayerIndex(index) {
+  localStorage.setItem('currentPlayerIndex', index.toString());
+}
 
 // Logout-Funktion
 function logout() {

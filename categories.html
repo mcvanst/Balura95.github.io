@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kategorien & Playlist</title>
+  <title>Kategorien, Playlist & Mitspieler</title>
   <!-- Materialize CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
   <!-- Google Fonts & Material Icons -->
@@ -16,14 +16,14 @@
   <div class="container" style="margin-top:20px;">
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <h4 class="card-title">Playlist & Kategorien</h4>
+        <h4 class="card-title">Playlist, Kategorien & Mitspieler</h4>
         <div class="input-field">
           <input id="playlist-url" type="text" placeholder="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
           <label for="playlist-url">Playlist URL</label>
         </div>
+        <!-- Kategorien -->
         <div id="categories-container">
           <h5>Kategorien</h5>
-          <!-- Initial ein Kategorie-Eingabefeld -->
           <div class="input-field">
             <input class="category-input" type="text" placeholder="Kategorie 1">
             <label>Kategorie</label>
@@ -32,6 +32,18 @@
         <button id="add-category" class="btn waves-effect waves-light blue" style="margin-top:10px;">
           <i class="material-icons left">add</i> Kategorie hinzufügen
         </button>
+        <!-- Mitspieler -->
+        <div id="players-container" style="margin-top:20px;">
+          <h5>Mitspieler</h5>
+          <div class="input-field">
+            <input class="player-input" type="text" placeholder="Mitspieler 1">
+            <label>Mitspieler</label>
+          </div>
+        </div>
+        <button id="add-player" class="btn waves-effect waves-light blue" style="margin-top:10px;">
+          <i class="material-icons left">add</i> Mitspieler hinzufügen
+        </button>
+        <!-- Bestätigen -->
         <button id="confirm-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           Bestätigen
         </button>
@@ -46,15 +58,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const addBtn = document.getElementById('add-category');
-      addBtn.addEventListener('click', () => {
+      // Kategorien hinzufügen
+      const addCatBtn = document.getElementById('add-category');
+      addCatBtn.addEventListener('click', () => {
         const container = document.getElementById('categories-container');
         const div = document.createElement('div');
         div.className = 'input-field';
         div.innerHTML = '<input class="category-input" type="text" placeholder="Neue Kategorie"><label>Kategorie</label>';
         container.appendChild(div);
       });
-      
+
+      // Mitspieler hinzufügen
+      const addPlayerBtn = document.getElementById('add-player');
+      addPlayerBtn.addEventListener('click', () => {
+        const container = document.getElementById('players-container');
+        const div = document.createElement('div');
+        div.className = 'input-field';
+        div.innerHTML = '<input class="player-input" type="text" placeholder="Neuer Mitspieler"><label>Mitspieler</label>';
+        container.appendChild(div);
+      });
+
+      // Bestätigen-Button
       const confirmBtn = document.getElementById('confirm-button');
       confirmBtn.addEventListener('click', () => {
         const playlistUrl = document.getElementById('playlist-url').value.trim();
@@ -63,9 +87,11 @@
           return;
         }
         localStorage.setItem('mobilePlaylistUrl', playlistUrl);
-        const inputs = document.querySelectorAll('.category-input');
+
+        // Kategorien sammeln
+        const catInputs = document.querySelectorAll('.category-input');
         let categories = [];
-        inputs.forEach(input => {
+        catInputs.forEach(input => {
           const value = input.value.trim();
           if (value) categories.push(value);
         });
@@ -74,6 +100,25 @@
           return;
         }
         localStorage.setItem('mobileCategories', JSON.stringify(categories));
+
+        // Mitspieler sammeln
+        const playerInputs = document.querySelectorAll('.player-input');
+        let players = [];
+        playerInputs.forEach(input => {
+          const value = input.value.trim();
+          if (value) players.push(value);
+        });
+        if (players.length === 0) {
+          M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
+          return;
+        }
+        localStorage.setItem('mobilePlayers', JSON.stringify(players));
+        // Setze den Mitspieler-Index auf 0
+        localStorage.setItem('currentPlayerIndex', "0");
+
+        console.log("Gespeicherte Playlist URL:", localStorage.getItem('mobilePlaylistUrl'));
+        console.log("Gespeicherte Kategorien:", localStorage.getItem('mobileCategories'));
+        console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
         // Weiterleitung zur mobil.html
         window.location.href = 'mobil.html';
       });
