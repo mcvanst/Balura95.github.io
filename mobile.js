@@ -6,7 +6,7 @@ let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
 let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
-let isPaused = false;   // Status für Pause/Resume
+// Es gibt keinen separaten Stop/Resume-Button mehr – stopPlayback wird über die Bewertungsbuttons ausgeführt
 
 // Hilfsfunktionen
 function extractPlaylistId(url) {
@@ -347,23 +347,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Bewertungsbuttons deaktiviert,
-  // Start-Button sichtbar, Steuerungsbereich (control-buttons) ausgeblendet.
+  // Initialer Zustand: Bewertungsbuttons aktiv, aber "Nächster Song" deaktiviert
+  // (Start-Button sichtbar, Steuerungsbereich ausgeblendet)
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
-  const stopButton = document.getElementById('stop-button');
-  if (startButton && controlButtons && correctButton && wrongButton && playButton && stopButton) {
+  if (startButton && controlButtons && correctButton && wrongButton && playButton) {
     startButton.style.display = 'block';
     controlButtons.style.display = 'none';
-    // Für Start: Bewertungsbuttons sollen aktiv sein
     correctButton.disabled = false;
     wrongButton.disabled = false;
-    playButton.disabled = false;  // Start-Button soll aktiv sein
-    stopButton.disabled = false;
-    stopButton.innerHTML = '<i class="material-icons">pause</i>';
+    playButton.disabled = false;
     document.getElementById('score-display').style.display = 'none';
     document.getElementById('category-heading').style.display = 'none';
     document.getElementById('player-turn').style.display = 'none';
@@ -371,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Event Listener für den Start-Button
   startButton.addEventListener('click', async () => {
-    // Blende den Start-Button aus und zeige den Steuerungsbereich sowie Score & Info
     startButton.style.display = 'none';
     controlButtons.style.display = 'block';
     document.getElementById('score-display').style.display = 'block';
@@ -382,7 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
       return;
     }
-    // Bewertungsbuttons aktiv
     correctButton.disabled = false;
     wrongButton.disabled = false;
     const randomItem = getRandomTrack(cachedPlaylistTracks);
@@ -406,13 +400,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!success) {
       M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
     }
-    // Beim ersten Song bleibt currentPlayerIndex = 0
-    firstRound = false;
+    firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
     // Nach Songstart: "Nächster Song" deaktivieren
     playButton.disabled = true;
+    // Hier rufen wir stopPlayback NICHT separat auf – es wird über die Bewertungsbuttons getriggert.
   });
   
   // Event Listener für den "Nächster Song"-Button
@@ -453,41 +447,12 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = true;
   });
   
-  // Event Listener für den Stop/Resume-Button (Toggle)
-  stopButton.addEventListener('click', async () => {
-    if (!isPaused) {
-      if (window.stopPlayback) {
-        await window.stopPlayback();
-        M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
-        isPaused = true;
-        stopButton.innerHTML = '<i class="material-icons">play_arrow</i>';
-      } else {
-        console.error("stopPlayback is not defined");
-      }
-    } else {
-      if (window.resumePlayback) {
-        const resumed = await window.resumePlayback();
-        if (resumed) {
-          M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
-          isPaused = false;
-          stopButton.innerHTML = '<i class="material-icons">pause</i>';
-        } else {
-          M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
-        }
-      } else {
-        const resumed = await window.playTrack(selectedTrackUri);
-        if (resumed) {
-          M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
-          isPaused = false;
-          stopButton.innerHTML = '<i class="material-icons">pause</i>';
-        }
-      }
-    }
-  });
-  
-  // Event Listener für den "Richtig"-Button (grünes Häkchen)
+  // Bewertungsbuttons: Beim Klick wird automatisch stopPlayback ausgeführt,
+  // anschließend werden "Nächster Song" wieder aktiviert und die Buttons deaktiviert.
   const correctBtn = document.getElementById('correct-button');
-  correctBtn.addEventListener('click', () => {
+  correctBtn.addEventListener('click', async () => {
+    // Stoppe Playback vor der Bewertung
+    if (window.stopPlayback) await window.stopPlayback();
     correctBtn.disabled = true;
     wrongButton.disabled = true;
     playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
@@ -497,21 +462,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerScores[currentPlayerIndex] >= winningScore) {
       showGameOverOverlay();
     }
-    // Nach Bewertung: Reaktiviere "Nächster Song" und den Stop/Resume-Button
+    // Nach Bewertung: Reaktiviere "Nächster Song"
     playButton.disabled = false;
-    stopButton.disabled = false;
   });
   
-  // Event Listener für den "Falsch"-Button (rotes Kreuz)
   const wrongBtn = document.getElementById('wrong-button');
-  wrongBtn.addEventListener('click', () => {
+  wrongBtn.addEventListener('click', async () => {
+    if (window.stopPlayback) await window.stopPlayback();
     correctBtn.disabled = true;
     wrongBtn.disabled = true;
     playButton.disabled = false;
-    stopButton.disabled = false;
   });
   
-  // Event Listener für den Reset-Button
+  // Reset-Button
   const resetButton = document.getElementById('reset-app');
   resetButton.addEventListener('click', () => {
     if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
@@ -519,13 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Event Listener für den Overlay-Button (Spielende)
+  // Overlay-Button (Spielende)
   const overlayMenuBtn = document.getElementById('overlay-menu-btn');
   overlayMenuBtn.addEventListener('click', () => {
     window.location.href = 'menu.html';
   });
 });
-
 
 
 // Hilfsfunktion zur iOS-Erkennung
