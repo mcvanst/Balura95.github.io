@@ -11,15 +11,13 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Custom CSS -->
   <style>
-    /* Damit der Inhalt scrollbar ist, wenn er länger wird */
     body {
-      margin: 0;
-      padding: 0;
+      overflow-y: auto;
       font-family: 'Roboto', sans-serif;
       background: linear-gradient(135deg, #e0eafc, #cfdef3);
       min-height: 100vh;
-      width: 100%;
-      overflow-y: auto;
+      margin: 0;
+      padding: 0;
     }
     .input-field {
       margin-bottom: 10px;
@@ -115,17 +113,14 @@
         }
         localStorage.setItem('mobilePlaylistUrl', playlistUrl);
 
-        // Kategorien sammeln
+        // Kategorien sammeln (optional)
         const catInputs = document.querySelectorAll('.category-input');
         let categories = [];
         catInputs.forEach(input => {
           const value = input.value.trim();
           if (value) categories.push(value);
         });
-        if (categories.length === 0) {
-          M.toast({ html: "Bitte mindestens eine Kategorie eingeben", classes: "rounded", displayLength: 2000 });
-          return;
-        }
+        // Kategorien können auch leer sein
         localStorage.setItem('mobileCategories', JSON.stringify(categories));
 
         // Mitspieler sammeln
