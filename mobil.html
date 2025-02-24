@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="styles.css">
+  <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </head>
 <body>
@@ -19,19 +20,15 @@
       <div class="card-content">
         <h4 class="card-title">Mobiles Spiel – Zufallsplaylist</h4>
         <div class="input-field">
-          <input id="playlist-url" type="text" value="https://open.spotify.com/playlist/DEINE_PLAYLIST_ID">
+          <input id="playlist-url" type="text">
           <label for="playlist-url">Playlist URL</label>
         </div>
         <!-- Button zum Einlesen der Playlist -->
         <button id="cache-button" class="btn-large waves-effect waves-light orange">
           <i class="material-icons left">library_music</i> Playlist einlesen
         </button>
-        <!-- Button zum Zufällig-Auswählen eines Songs -->
-        <button id="select-song" class="btn-large waves-effect waves-light purple" style="display:none; margin-top:20px;">
-          <i class="material-icons left">shuffle</i> Zufälligen Song auswählen
-        </button>
-        <!-- Button zum Abspielen des ausgewählten Songs -->
-        <button id="play-button2" class="btn-large waves-effect waves-light green" style="display:none; margin-top:20px;">
+        <!-- Play-Button zum Abspielen eines zufälligen Songs -->
+        <button id="play-button" class="btn-large waves-effect waves-light green" style="display:none; margin-top:20px;">
           <i class="material-icons left">play_arrow</i> Song abspielen
         </button>
       </div>
