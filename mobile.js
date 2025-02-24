@@ -5,7 +5,7 @@ let mobileCategories = [];
 let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;  // Für die erste Runde: Spieler 1 bleibt dran
+let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
 let isPaused = false;   // Status für Pause/Resume
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
@@ -66,6 +66,7 @@ function updateScoreDisplay() {
   const currentScore = playerScores[currentPlayerIndex] || 0;
   if (scoreDisplay) {
     scoreDisplay.textContent = `${currentPlayer}: ${currentScore} Punkte`;
+    scoreDisplay.style.display = 'block';
   }
 }
 
@@ -74,6 +75,7 @@ function updatePlayerDisplay(playerName) {
   const playerTurn = document.getElementById('player-turn');
   if (playerTurn) {
     playerTurn.textContent = "Spieler: " + playerName;
+    playerTurn.style.display = 'block';
   }
 }
 
@@ -266,30 +268,6 @@ let spotifySDKReady = new Promise((resolve) => {
         }
       };
 
-      // Resume Playback: sende einen leeren JSON-Body, damit die Wiedergabe fortgesetzt wird
-      window.stopPlayback = async function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-        try {
-          let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
-            method: 'PUT',
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.status === 204) {
-            console.log("Playback stopped.");
-          } else {
-            // Lies die Antwort als Text, da sie kein valides JSON ist
-            const errorText = await response.text();
-            console.error("Error stopping playback:", errorText);
-          }
-        } catch (error) {
-          console.error("Error stopping track:", error);
-        }
-      };
-      
       window.resumePlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
@@ -306,8 +284,8 @@ let spotifySDKReady = new Promise((resolve) => {
             console.log("Playback resumed successfully.");
             return true;
           } else {
-            const errorText = await response.text();
-            console.error("Error resuming playback:", errorText);
+            const data = await response.text();
+            console.error("Error resuming playback:", data);
             return false;
           }
         } catch (error) {
@@ -315,8 +293,28 @@ let spotifySDKReady = new Promise((resolve) => {
           return false;
         }
       };
-      
-      
+
+      window.stopPlayback = async function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        try {
+          let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
+            method: 'PUT',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.status === 204) {
+            console.log("Playback stopped.");
+          } else {
+            const errorText = await response.text();
+            console.error("Error stopping playback:", errorText);
+          }
+        } catch (error) {
+          console.error("Error stopping track:", error);
+        }
+      };
 
       resolve();
     });
@@ -365,160 +363,184 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" (playButton) und Stop/Resume-Button aktiv (Stop-Button zeigt Pause-Icon)
+  // Initialer Zustand: Bewertungsbuttons deaktiviert,
+  // Start-Button sichtbar, Steuerungsbereich (play-button, stop-button, Bewertungsbuttons) ausgeblendet.
+  const startButton = document.getElementById('start-button');
+  const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
   const stopButton = document.getElementById('stop-button');
-  if (correctButton && wrongButton && playButton && stopButton) {
+  if (startButton && controlButtons && correctButton && wrongButton && playButton && stopButton) {
+    startButton.style.display = 'block';
+    controlButtons.style.display = 'none';
     correctButton.disabled = true;
     wrongButton.disabled = true;
-    playButton.disabled = false;  // Beim allerersten Mal aktiv
+    playButton.disabled = false;
     stopButton.disabled = false;
     stopButton.innerHTML = '<i class="material-icons">pause</i>';
+    document.getElementById('score-display').style.display = 'none';
+    document.getElementById('category-heading').style.display = 'none';
+    document.getElementById('player-turn').style.display = 'none';
   }
+  
+  // Event Listener für den Start-Button
+  startButton.addEventListener('click', async () => {
+    // Blende den Start-Button aus und zeige den Steuerungsbereich sowie Score & Info
+    startButton.style.display = 'none';
+    controlButtons.style.display = 'block';
+    document.getElementById('score-display').style.display = 'block';
+    document.getElementById('category-heading').style.display = 'block';
+    document.getElementById('player-turn').style.display = 'block';
+    // Starte den ersten Song für Spieler 1:
+    if (!cachedPlaylistTracks) {
+      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+      return;
+    }
+    correctButton.disabled = true;
+    wrongButton.disabled = true;
+    const randomItem = getRandomTrack(cachedPlaylistTracks);
+    console.log("Random Item:", randomItem);
+    if (!randomItem || !randomItem.track) {
+      M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
+      return;
+    }
+    selectedTrackUri = randomItem.track.uri;
+    console.log("Ausgewählte Track URI:", selectedTrackUri);
+    let randomCategory = "";
+    if (mobileCategories && mobileCategories.length > 0) {
+      const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+      randomCategory = mobileCategories[randomIndex];
+    }
+    console.log("Ausgewählte Kategorie:", randomCategory);
+    updateCategoryDisplay(randomCategory);
+    updateTrackDetails(randomItem.track, randomItem.added_by);
+    await spotifySDKReady;
+    const success = await window.playTrack(selectedTrackUri);
+    if (!success) {
+      M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+    }
+    // Beim ersten Song bleibt currentPlayerIndex = 0
+    firstRound = false;
+    saveCurrentPlayerIndex(currentPlayerIndex);
+    updateScoreDisplay();
+    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+    // Nach Songstart: "Nächster Song" deaktivieren (Stop/Resume bleibt aktiv)
+    playButton.disabled = true;
+  });
   
   // Event Listener für den "Nächster Song"-Button
-  if (playButton) {
-    playButton.addEventListener('click', async () => {
-      if (!cachedPlaylistTracks) {
-        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
-        return;
-      }
-      // Reaktiviere Bewertungsbuttons für die neue Runde
-      if (correctButton && wrongButton) {
-        correctButton.disabled = false;
-        wrongButton.disabled = false;
-      }
-      const randomItem = getRandomTrack(cachedPlaylistTracks);
-      console.log("Random Item:", randomItem);
-      if (!randomItem || !randomItem.track) {
-        M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
-        return;
-      }
-      selectedTrackUri = randomItem.track.uri;
-      console.log("Ausgewählte Track URI:", selectedTrackUri);
-      // Wähle zufällig eine Kategorie aus (optional)
-      let randomCategory = "";
-      if (mobileCategories && mobileCategories.length > 0) {
-        const randomIndex = Math.floor(Math.random() * mobileCategories.length);
-        randomCategory = mobileCategories[randomIndex];
-      }
-      console.log("Ausgewählte Kategorie:", randomCategory);
-      updateCategoryDisplay(randomCategory);
-      updateTrackDetails(randomItem.track, randomItem.added_by);
-      await spotifySDKReady;
-      const success = await window.playTrack(selectedTrackUri);
-      if (!success) {
-        M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
-      }
-      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach inkrementieren
-      if (!firstRound) {
-        currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
-      } else {
-        firstRound = false;
-      }
-      saveCurrentPlayerIndex(currentPlayerIndex);
-      updateScoreDisplay();
-      updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-      // Nach Songstart: "Nächster Song" deaktivieren, Stop/Resume-Button bleibt aktiv
-      playButton.disabled = true;
-    });
-  } else {
-    console.error("play-button not found");
-  }
+  playButton.addEventListener('click', async () => {
+    if (!cachedPlaylistTracks) {
+      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+      return;
+    }
+    // Reaktiviere Bewertungsbuttons für die neue Runde
+    correctButton.disabled = false;
+    wrongButton.disabled = false;
+    const randomItem = getRandomTrack(cachedPlaylistTracks);
+    console.log("Random Item:", randomItem);
+    if (!randomItem || !randomItem.track) {
+      M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
+      return;
+    }
+    selectedTrackUri = randomItem.track.uri;
+    console.log("Ausgewählte Track URI:", selectedTrackUri);
+    let randomCategory = "";
+    if (mobileCategories && mobileCategories.length > 0) {
+      const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+      randomCategory = mobileCategories[randomIndex];
+    }
+    console.log("Ausgewählte Kategorie:", randomCategory);
+    updateCategoryDisplay(randomCategory);
+    updateTrackDetails(randomItem.track, randomItem.added_by);
+    await spotifySDKReady;
+    const success = await window.playTrack(selectedTrackUri);
+    if (!success) {
+      M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+    }
+    if (!firstRound) {
+      currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
+    }
+    saveCurrentPlayerIndex(currentPlayerIndex);
+    updateScoreDisplay();
+    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+    // Nach Songstart: "Nächster Song" deaktivieren
+    playButton.disabled = true;
+  });
   
   // Event Listener für den Stop/Resume-Button (Toggle)
-  if (stopButton) {
-    stopButton.addEventListener('click', async () => {
-      if (!isPaused) {
-        if (window.stopPlayback) {
-          await window.stopPlayback();
-          M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
-          isPaused = true;
-          stopButton.innerHTML = '<i class="material-icons">play_arrow</i>';
+  stopButton.addEventListener('click', async () => {
+    if (!isPaused) {
+      if (window.stopPlayback) {
+        await window.stopPlayback();
+        M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+        isPaused = true;
+        stopButton.innerHTML = '<i class="material-icons">play_arrow</i>';
+      } else {
+        console.error("stopPlayback is not defined");
+      }
+    } else {
+      if (window.resumePlayback) {
+        const resumed = await window.resumePlayback();
+        if (resumed) {
+          M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
+          isPaused = false;
+          stopButton.innerHTML = '<i class="material-icons">pause</i>';
         } else {
-          console.error("stopPlayback is not defined");
+          M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
         }
       } else {
-        if (window.resumePlayback) {
-          const resumed = await window.resumePlayback();
-          if (resumed) {
-            M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
-            isPaused = false;
-            stopButton.innerHTML = '<i class="material-icons">pause</i>';
-          } else {
-            M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
-          }
-        } else {
-          // Falls resumePlayback nicht definiert – versuche playTrack erneut
-          const resumed = await window.playTrack(selectedTrackUri);
-          if (resumed) {
-            M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
-            isPaused = false;
-            stopButton.innerHTML = '<i class="material-icons">pause</i>';
-          }
+        const resumed = await window.playTrack(selectedTrackUri);
+        if (resumed) {
+          M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
+          isPaused = false;
+          stopButton.innerHTML = '<i class="material-icons">pause</i>';
         }
       }
-    });
-  } else {
-    console.error("stop-button not found");
-  }
+    }
+  });
   
   // Event Listener für den "Richtig"-Button (grünes Häkchen)
   const correctBtn = document.getElementById('correct-button');
-  if (correctBtn) {
-    correctBtn.addEventListener('click', () => {
-      correctBtn.disabled = true;
-      wrongButton.disabled = true;
-      playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
-      localStorage.setItem('playerScores', JSON.stringify(playerScores));
-      updateScoreDisplay();
-      const winningScore = getWinningScore();
-      if (playerScores[currentPlayerIndex] >= winningScore) {
-        showGameOverOverlay();
-      }
-      // Nach Bewertung: Reaktiviere "Nächster Song" und Stop/Resume-Button
-      playButton.disabled = false;
-      stopButton.disabled = false;
-    });
-  } else {
-    console.error("correct-button not found");
-  }
+  correctBtn.addEventListener('click', () => {
+    correctBtn.disabled = true;
+    wrongButton.disabled = true;
+    playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
+    localStorage.setItem('playerScores', JSON.stringify(playerScores));
+    updateScoreDisplay();
+    const winningScore = getWinningScore();
+    if (playerScores[currentPlayerIndex] >= winningScore) {
+      showGameOverOverlay();
+    }
+    // Nach Bewertung: Reaktiviere "Nächster Song" und Stop/Resume-Button
+    playButton.disabled = false;
+    stopButton.disabled = false;
+  });
   
   // Event Listener für den "Falsch"-Button (rotes Kreuz)
   const wrongBtn = document.getElementById('wrong-button');
-  if (wrongBtn) {
-    wrongBtn.addEventListener('click', () => {
-      correctBtn.disabled = true;
-      wrongBtn.disabled = true;
-      // Keine Scoreänderung – Buttons wieder aktivieren
-      playButton.disabled = false;
-      stopButton.disabled = false;
-    });
-  } else {
-    console.error("wrong-button not found");
-  }
+  wrongBtn.addEventListener('click', () => {
+    correctBtn.disabled = true;
+    wrongBtn.disabled = true;
+    // Keine Scoreänderung – Buttons wieder aktivieren
+    playButton.disabled = false;
+    stopButton.disabled = false;
+  });
   
   // Event Listener für den Reset-Button
   const resetButton = document.getElementById('reset-app');
-  if (resetButton) {
-    resetButton.addEventListener('click', () => {
-      if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
-        logout();
-      }
-    });
-  } else {
-    console.error("reset-app not found");
-  }
+  resetButton.addEventListener('click', () => {
+    if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
+      logout();
+    }
+  });
   
   // Event Listener für den Overlay-Button (Spielende)
   const overlayMenuBtn = document.getElementById('overlay-menu-btn');
-  if (overlayMenuBtn) {
-    overlayMenuBtn.addEventListener('click', () => {
-      window.location.href = 'menu.html';
-    });
-  }
+  overlayMenuBtn.addEventListener('click', () => {
+    window.location.href = 'menu.html';
+  });
 });
 
 // Hilfsfunktion zur iOS-Erkennung
@@ -526,7 +548,7 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Spotify Web Playback SDK Setup – nur eine einzige Deklaration von spotifySDKReady (bereits oben)
+// Spotify SDK Setup – nur eine einzige Deklaration von spotifySDKReady (bereits oben)
 
 // Logout-Funktion
 function logout() {

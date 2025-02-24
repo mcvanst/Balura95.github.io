@@ -21,6 +21,7 @@
       right: 10px;
       font-size: 18px;
       font-weight: bold;
+      display: none;
     }
     /* Container für Bewertungsbuttons */
     #result-buttons {
@@ -67,35 +68,38 @@
   </style>
 </head>
 <body>
+  <!-- Scoreanzeige, Kategorie & Spieler, zunächst versteckt -->
   <div id="score-display">Score: 0</div>
+  <h5 id="category-heading" style="text-align:center; margin-bottom:10px; display:none;"></h5>
+  <h5 id="player-turn" style="text-align:center; margin-bottom:20px; display:none;"></h5>
+
   <div class="container" style="margin-top:20px;">
-    <!-- Überschrift für zufällig ausgewählte Kategorie -->
-    <h5 id="category-heading" style="text-align:center; margin-bottom:10px;"></h5>
-    <!-- Anzeige des aktuellen Mitspielers -->
-    <h5 id="player-turn" style="text-align:center; margin-bottom:20px;"></h5>
-    
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <!-- Button "Nächster Song" -->
-        <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;" disabled>
-          <i class="material-icons left">skip_next</i> Nächster Song
+        <!-- Start-Button (initial sichtbar) -->
+        <button id="start-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
+          <i class="material-icons left">play_arrow</i> Start
         </button>
-        <!-- Stop/Resume Button: Zeigt initial das Pause-Symbol -->
-        <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;" disabled>
-          <i class="material-icons">pause</i>
-        </button>
-        <!-- Bewertungsbuttons -->
-        <div id="result-buttons">
-          <button id="correct-button" class="btn waves-effect waves-light green">
-            <i class="material-icons">check</i>
+        <!-- Steuerungsbereich (zunächst versteckt) -->
+        <div id="control-buttons" style="display:none;">
+          <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;" disabled>
+            <i class="material-icons left">skip_next</i> Nächster Song
           </button>
-          <button id="wrong-button" class="btn waves-effect waves-light red">
-            <i class="material-icons">close</i>
+          <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;" disabled>
+            <i class="material-icons">pause</i>
           </button>
+          <div id="result-buttons">
+            <button id="correct-button" class="btn waves-effect waves-light green">
+              <i class="material-icons">check</i>
+            </button>
+            <button id="wrong-button" class="btn waves-effect waves-light red">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Box für Songinfos: Zeigt initial "Songinfos" an, toggelt bei Klick -->
+    <!-- Box für Songinfos (initial ausgeblendet) -->
     <div id="track-details" class="card z-depth-1" style="display:none; margin-top:20px; padding:10px; cursor:pointer;">
       <p id="track-info">Songinfos</p>
     </div>
@@ -118,7 +122,7 @@
     <button id="overlay-menu-btn" class="btn-large waves-effect waves-light blue">Zurück zum Menü</button>
   </div>
   
-  <!-- Reset Button -->
+  <!-- Reset-Button -->
   <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
   
   <!-- Materialize JS -->
