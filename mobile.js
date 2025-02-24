@@ -6,7 +6,7 @@ let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
 
-// Hilfsfunktion: Extrahiere die Playlist-ID aus einer URL
+// Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
@@ -57,7 +57,7 @@ function saveCurrentPlayerIndex(index) {
   localStorage.setItem('currentPlayerIndex', index.toString());
 }
 
-// Aktualisiere die Scoreanzeige (oben rechts) und den aktuellen Spieler-Header
+// Aktualisiere die Scoreanzeige (oben rechts)
 function updateScoreDisplay() {
   const scoreDisplay = document.getElementById('score-display');
   const currentPlayer = mobilePlayers[currentPlayerIndex] || "Unbekannt";
@@ -67,10 +67,29 @@ function updateScoreDisplay() {
   }
 }
 
+// Aktualisiere den Mitspieler-Header (unterhalb der Kategorie)
 function updatePlayerDisplay(playerName) {
   const playerTurn = document.getElementById('player-turn');
   if (playerTurn) {
     playerTurn.textContent = "Spieler: " + playerName;
+  }
+}
+
+// Spotify: Lade gespeicherte Playlist-URL und Mitspieler-/Kategorien-Daten
+async function loadPlaylist() {
+  const playlistUrl = getStoredPlaylistUrl();
+  console.log("Stored Playlist URL:", playlistUrl);
+  const playlistId = extractPlaylistId(playlistUrl);
+  if (!playlistId) {
+    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
+    return;
+  }
+  const tracks = await fetchPlaylistTracks(playlistId);
+  if (tracks && tracks.length > 0) {
+    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
+    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
+  } else {
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
 }
 
@@ -98,25 +117,7 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion zum Laden der Playlist aus dem gespeicherten Wert
-async function loadPlaylist() {
-  const playlistUrl = getStoredPlaylistUrl();
-  console.log("Stored Playlist URL:", playlistUrl);
-  const playlistId = extractPlaylistId(playlistUrl);
-  if (!playlistId) {
-    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const tracks = await fetchPlaylistTracks(playlistId);
-  if (tracks && tracks.length > 0) {
-    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
-    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-  } else {
-    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
-  }
-}
-
-// Funktion: Zufälligen Track auswählen
+// Funktion: Zufälligen Track aus dem Array auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -124,8 +125,8 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zuerst wird nur "Songinfos" angezeigt; bei Klick toggelt sie zu vollständigen Details.
-// Zusätzlich wird der Songtitel bearbeitet: Alles ab dem ersten Bindestrich wird entfernt.
+// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Dabei wird der Songtitel so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
@@ -159,14 +160,6 @@ function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
     categoryHeading.textContent = "Kategorie: " + category;
-  }
-}
-
-// Aktualisiert die Anzeige des aktuellen Mitspielers (unterhalb der Kategorie)
-function updatePlayerDisplay(playerName) {
-  const playerTurn = document.getElementById('player-turn');
-  if (playerTurn) {
-    playerTurn.textContent = "Spieler: " + playerName;
   }
 }
 
@@ -269,13 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   
-  // Lade gespeicherte Kategorien und Mitspieler aus localStorage
+  // Lade gespeicherte Kategorien und Mitspieler
   mobileCategories = loadCategories();
   mobilePlayers = loadPlayers();
   console.log("Geladene Kategorien:", mobileCategories);
   console.log("Geladene Mitspieler:", mobilePlayers);
   
-  // Initialisiere playerScores (falls noch nicht vorhanden)
+  // Initialisiere playerScores (für jeden Spieler, falls noch nicht vorhanden)
   if (!localStorage.getItem('playerScores')) {
     playerScores = new Array(mobilePlayers.length).fill(0);
     localStorage.setItem('playerScores', JSON.stringify(playerScores));
@@ -328,9 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
       updateCategoryDisplay(randomCategory);
-      // Aktualisiere Songinfos-Box (nur "Songinfos" initial)
+      // Aktualisiere die Songinfos-Box (zeigt initial nur "Songinfos")
       updateTrackDetails(randomItem.track, randomItem.added_by);
-      // Spiele den Song ab
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
@@ -360,21 +352,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const correctButton = document.getElementById('correct-button');
   if (correctButton) {
     correctButton.addEventListener('click', () => {
-      // Aktueller Spieler bekommt einen Punkt
+      // Erhöhe den Score des aktuellen Spielers um 1
       playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
       localStorage.setItem('playerScores', JSON.stringify(playerScores));
       updateScoreDisplay();
       // Prüfe, ob 10 Punkte erreicht wurden
       if (playerScores[currentPlayerIndex] >= 10) {
         M.toast({ html: `Spiel beendet! ${mobilePlayers[currentPlayerIndex]} hat gewonnen!`, classes: "rounded", displayLength: 4000 });
-        // Optional: Spiel zurücksetzen oder andere Aktion
-      } else {
-        // Wechsle zum nächsten Spieler
-        currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
-        saveCurrentPlayerIndex(currentPlayerIndex);
-        updateScoreDisplay();
-        updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+        // Optional: Deaktiviere weitere Eingaben
       }
+      // Es erfolgt kein Wechsel zum nächsten Spieler
     });
   } else {
     console.error("correct-button not found");
@@ -384,11 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wrongButton = document.getElementById('wrong-button');
   if (wrongButton) {
     wrongButton.addEventListener('click', () => {
-      // Kein Punkt, einfach zum nächsten Spieler wechseln
-      currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
-      saveCurrentPlayerIndex(currentPlayerIndex);
-      updateScoreDisplay();
-      updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+      // Bei Falsch passiert nichts, der Score bleibt unverändert.
     });
   } else {
     console.error("wrong-button not found");
