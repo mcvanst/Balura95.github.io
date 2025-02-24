@@ -14,7 +14,7 @@
   <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <style>
-    /* Basisstil für den Body */
+    /* Body ohne weißen Container, zentral ausgerichtet */
     body {
       font-family: 'Roboto', sans-serif;
       margin: 0;
@@ -26,8 +26,9 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+      position: relative;
     }
-    /* Scoreanzeige, Kategorie & Spieler (oben rechts, etc.) */
+    /* Score display oben rechts */
     #score-display {
       position: absolute;
       top: 10px;
@@ -36,15 +37,29 @@
       font-weight: bold;
       display: none;
     }
-    #category-heading, #player-turn {
-      display: none;
+    /* Scoreboard-Button oben links */
+    #scoreboard-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #2196F3;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    /* Startbutton: komplett rund, groß und zentriert */
+    /* Startbutton – groß, grün, komplett rund */
     #start-button {
       width: 150px;
       height: 150px;
       border-radius: 50%;
-      background-color: #4CAF50; /* kräftiges Grün */
+      background-color: #4CAF50;
       color: #fff;
       border: none;
       font-size: 28px;
@@ -82,14 +97,14 @@
       background: rgba(255,255,255,0.85);
       border-radius: 8px;
     }
-    /* Overlay für Spielende */
+    /* Game-Over-Overlay */
     #game-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0,0,0,0.85);
       color: #fff;
       display: none;
       align-items: center;
@@ -101,16 +116,62 @@
     #winner-heading {
       font-size: 32px;
       margin-bottom: 20px;
+      color: gold;
     }
     #game-overlay table {
       width: 80%;
       margin-bottom: 20px;
       border-collapse: collapse;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
     }
     #game-overlay th, #game-overlay td {
       border: 1px solid #fff;
       padding: 8px;
       text-align: center;
+    }
+    /* Scoreboard-Overlay */
+    #score-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      padding: 20px;
+    }
+    #score-overlay h4 {
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+    #score-overlay table {
+      width: 80%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    #score-overlay th, #score-overlay td {
+      border: 1px solid #fff;
+      padding: 8px;
+      text-align: center;
+    }
+    #score-overlay .close-btn {
+      background-color: #2196F3;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     /* Reset-Button fixiert unten */
     .reset-btn {
@@ -122,10 +183,12 @@
   </style>
 </head>
 <body>
-  <!-- Score, Kategorie & Spieleranzeige -->
+  <!-- Scoreboard-Button oben links -->
+  <button id="scoreboard-btn"><i class="material-icons">list</i></button>
+  <!-- Scoreanzeige, Kategorie & aktueller Spieler -->
   <div id="score-display">Score: 0</div>
-  <h5 id="category-heading"></h5>
-  <h5 id="player-turn"></h5>
+  <h5 id="category-heading" style="display:none;"></h5>
+  <h5 id="player-turn" style="display:none;"></h5>
   
   <div class="container">
     <!-- Startbereich -->
@@ -154,7 +217,7 @@
     </div>
   </div>
   
-  <!-- Overlay für Spielende -->
+  <!-- Game Over Overlay -->
   <div id="game-overlay">
     <h4 id="winner-heading"></h4>
     <table id="score-table">
@@ -169,6 +232,23 @@
       </tbody>
     </table>
     <button id="overlay-menu-btn" class="btn-large waves-effect waves-light blue">Zurück zum Menü</button>
+  </div>
+  
+  <!-- Scoreboard Overlay -->
+  <div id="score-overlay">
+    <h4>Aktuelle Punktestände</h4>
+    <table id="scoreboard-table">
+      <thead>
+        <tr>
+          <th>Spieler</th>
+          <th>Punkte</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dynamisch erzeugt -->
+      </tbody>
+    </table>
+    <button class="close-btn" id="close-score-overlay">Schließen</button>
   </div>
   
   <!-- Reset-Button -->

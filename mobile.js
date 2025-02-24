@@ -1,16 +1,13 @@
-// mobile.js
-
 // Globale Variablen
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
-let mobileCategories = []; // Wird in categorie1.html gespeichert
-let mobilePlayers = [];    // Wird in categorie2.html gespeichert
+let mobileCategories = [];
+let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;     // Beim allerersten Song bleibt Spieler 1 aktiv
+let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
 
 // Hilfsfunktionen
-
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
@@ -185,7 +182,6 @@ function updateTrackDetails(track, addedBy) {
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
-    // Falls keine Kategorie angegeben wurde, wird nichts angezeigt
     categoryHeading.textContent = category ? "Kategorie: " + category : "";
   }
 }
@@ -351,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPlaylist();
   
   // Initialer Zustand:
-  // Start-Button sichtbar, Steuerungsbereich (control-buttons) ausgeblendet.
+  // Start-Button sichtbar, Steuerungsbereich ausgeblendet.
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -360,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startButton && controlButtons && correctButton && wrongButton && playButton) {
     startButton.style.display = 'block';
     controlButtons.style.display = 'none';
-    // Bewertungsbuttons sollen beim Start aktiv sein
+    // Bewertungsbuttons sollen zu Beginn aktiv sein
     correctButton.disabled = false;
     wrongButton.disabled = false;
     playButton.disabled = false;
@@ -405,7 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!success) {
       M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
     }
-    firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
+    // Beim ersten Song bleibt currentPlayerIndex = 0
+    firstRound = false;
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
@@ -451,8 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = true;
   });
   
-  // Bewertungsbuttons: Beim Klick wird automatisch stopPlayback ausgeführt,
-  // danach werden "Nächster Song" aktiviert.
+  // Bewertungsbuttons: Beim Klick wird automatisch stopPlayback() aufgerufen,
+  // danach wird der "Nächster Song"-Button aktiviert.
   const correctBtn = document.getElementById('correct-button');
   correctBtn.addEventListener('click', async () => {
     if (window.stopPlayback) await window.stopPlayback();
@@ -477,6 +474,32 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = false;
   });
   
+  // Scoreboard-Overlay: Beim Klick auf den Button oben links öffnen
+  const scoreboardBtn = document.getElementById('scoreboard-btn');
+  const scoreOverlay = document.getElementById('score-overlay');
+  const closeScoreOverlay = document.getElementById('close-score-overlay');
+  if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
+    scoreboardBtn.addEventListener('click', () => {
+      const tableBody = document.querySelector('#scoreboard-table tbody');
+      tableBody.innerHTML = "";
+      for (let i = 0; i < mobilePlayers.length; i++) {
+        const row = document.createElement('tr');
+        const playerCell = document.createElement('td');
+        playerCell.textContent = mobilePlayers[i];
+        const scoreCell = document.createElement('td');
+        scoreCell.textContent = playerScores[i] || 0;
+        row.appendChild(playerCell);
+        row.appendChild(scoreCell);
+        tableBody.appendChild(row);
+      }
+      scoreOverlay.style.display = 'flex';
+    });
+    
+    closeScoreOverlay.addEventListener('click', () => {
+      scoreOverlay.style.display = 'none';
+    });
+  }
+  
   // Reset-Button
   const resetButton = document.getElementById('reset-app');
   resetButton.addEventListener('click', () => {
@@ -491,6 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'menu.html';
   });
 });
+
+
 
 // Hilfsfunktion zur iOS-Erkennung
 function isIOS() {
