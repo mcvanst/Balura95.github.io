@@ -5,7 +5,8 @@ let mobileCategories = [];
 let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;  // Für die erste Runde, Spieler 1 bleibt dran
+let firstRound = true;  // Für die erste Runde: Spieler 1 bleibt dran
+let isPaused = false;   // Für Pause/Resume
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -162,7 +163,7 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
 // Der Songtitel wird so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
@@ -265,6 +266,32 @@ let spotifySDKReady = new Promise((resolve) => {
         }
       };
 
+      // Stop/Resume Toggle: Wenn aktuell nicht pausiert, stoppe; ansonsten resume.
+      window.resumePlayback = async function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return false;
+        try {
+          let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.status === 204) {
+            console.log("Playback resumed successfully.");
+            return true;
+          } else {
+            const data = await response.json();
+            console.error("Error resuming playback:", data);
+            return false;
+          }
+        } catch (error) {
+          console.error("Error resuming playback:", error);
+          return false;
+        }
+      };
+
       window.stopPlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
@@ -304,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log("Geladene Kategorien:", mobileCategories);
   console.log("Geladene Mitspieler:", mobilePlayers);
   
-  // Initialisiere playerScores (falls noch nicht vorhanden)
+  // Initialisiere playerScores, falls noch nicht vorhanden
   if (!localStorage.getItem('playerScores')) {
     playerScores = new Array(mobilePlayers.length).fill(0);
     localStorage.setItem('playerScores', JSON.stringify(playerScores));
@@ -333,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" und "Stop Playback" aktiv
+  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" und "Stop Playback" (Pause) aktiv
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
@@ -341,8 +368,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (correctButton && wrongButton && playButton && stopButton) {
     correctButton.disabled = true;
     wrongButton.disabled = true;
+    // Beim allerersten Mal aktiv
     playButton.disabled = false;
     stopButton.disabled = false;
+    stopButton.textContent = "Stop Playback";
   }
   
   // Event Listener für den "Nächster Song"-Button
@@ -379,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach wird er inkrementiert
+      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach inkrementieren
       if (!firstRound) {
         currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       } else {
@@ -388,22 +417,44 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-      // Deaktiviere "Nächster Song" und "Stop Playback" bis zur Bewertung
+      // Nach Songstart: "Nächster Song" deaktivieren, Stop-Button bleibt aktiv (zum Pausieren)
       playButton.disabled = true;
-      stopButton.disabled = true;
     });
   } else {
     console.error("play-button not found");
   }
   
-  // Event Listener für den Stop-Button
+  // Event Listener für den Stop/Resume-Button (Toggle)
   if (stopButton) {
     stopButton.addEventListener('click', async () => {
-      if (window.stopPlayback) {
-        await window.stopPlayback();
-        M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+      if (!isPaused) {
+        if (window.stopPlayback) {
+          await window.stopPlayback();
+          M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+          isPaused = true;
+          stopButton.textContent = "Resume";
+        } else {
+          console.error("stopPlayback is not defined");
+        }
       } else {
-        console.error("stopPlayback is not defined");
+        if (window.resumePlayback) {
+          const resumed = await window.resumePlayback();
+          if (resumed) {
+            M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
+            isPaused = false;
+            stopButton.textContent = "Stop Playback";
+          } else {
+            M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
+          }
+        } else {
+          // Falls resumePlayback nicht definiert – versuche playTrack erneut
+          const resumed = await window.playTrack(selectedTrackUri);
+          if (resumed) {
+            M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
+            isPaused = false;
+            stopButton.textContent = "Stop Playback";
+          }
+        }
       }
     });
   } else {
@@ -466,11 +517,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Spotify Web Playback SDK Setup – siehe oben, nur eine einzige Deklaration von spotifySDKReady existiert
-
+// Spotify Web Playback SDK Setup – Die Deklaration von spotifySDKReady erfolgt nur einmal oben
 // Logout-Funktion
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
   window.location.href = 'index.html';
+}
+
+// Hilfsfunktion zur iOS-Erkennung (falls benötigt)
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
