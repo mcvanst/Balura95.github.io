@@ -281,6 +281,7 @@ let spotifySDKReady = new Promise((resolve) => {
           if (response.status === 204) {
             console.log("Playback stopped.");
           } else {
+            // Lies die Antwort als Text, da sie kein valides JSON ist
             const errorText = await response.text();
             console.error("Error stopping playback:", errorText);
           }
@@ -295,8 +296,7 @@ let spotifySDKReady = new Promise((resolve) => {
         try {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
-            // Sende einen leeren Body, um Resume zu triggern
-            body: JSON.stringify({}),
+            body: JSON.stringify({}), // Leerer Body
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -315,6 +315,7 @@ let spotifySDKReady = new Promise((resolve) => {
           return false;
         }
       };
+      
       
 
       resolve();
