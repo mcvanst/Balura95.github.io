@@ -11,11 +11,26 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Custom CSS -->
   <style>
+    /* Damit der Inhalt scrollbar ist, wenn er länger wird */
     body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      min-height: 100vh;
+      width: 100%;
       overflow-y: auto;
     }
     .input-field {
       margin-bottom: 10px;
+    }
+    /* Fade-In Animation */
+    .fade-in {
+      animation: fadeIn 1s ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
     }
   </style>
 </head>
