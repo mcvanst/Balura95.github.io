@@ -3,12 +3,25 @@ let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
 let currentTrack = null;
 let trackDetailsExpanded = false;
+let mobileCategories = [];
 
-// Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
-function extractPlaylistId(url) {
-  const regex = /playlist\/([a-zA-Z0-9]+)/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
+// Statt einer Eingabe in mobil.html, lesen wir die Playlist-URL aus localStorage
+function getStoredPlaylistUrl() {
+  return localStorage.getItem('mobilePlaylistUrl') || "";
+}
+
+// Lade die Kategorien aus localStorage
+function loadCategories() {
+  const catStr = localStorage.getItem('mobileCategories');
+  if (catStr) {
+    try {
+      return JSON.parse(catStr);
+    } catch (e) {
+      console.error("Error parsing categories:", e);
+      return [];
+    }
+  }
+  return [];
 }
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
@@ -35,25 +48,21 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion, die beim Klick auf "Playlist einlesen" aufgerufen wird
+// Funktion zum Laden der Playlist aus dem gespeicherten Wert
 async function loadPlaylist() {
-  const playlistUrl = document.getElementById('playlist-url').value;
-  console.log("Playlist URL:", playlistUrl);
+  const playlistUrl = getStoredPlaylistUrl();
+  console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
   if (!playlistId) {
-    M.toast({ html: "Ungültige Playlist URL", classes: "rounded", displayLength: 2000 });
+    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
     return;
   }
   const tracks = await fetchPlaylistTracks(playlistId);
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-    // Zeige den Play-Button an
-    document.getElementById('play-button').style.display = 'inline-flex';
-    // Zeige den Stop-Button ebenfalls an
-    document.getElementById('stop-button').style.display = 'inline-flex';
   } else {
-    M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
 }
 
@@ -64,14 +73,14 @@ function getRandomTrack(tracks) {
   return tracks[randomIndex];
 }
 
-// Aktualisiert die Track-Details-Box:
-// Initial zeigt sie "Songinfos" an. Beim Klick toggelt sie, um vollständige Details (Titel, Interpret, Erscheinungsjahr, hinzugefügt von) anzuzeigen.
-function updateTrackDetails(track, addedBy) {
+// Aktualisiert die Trackdetails-Box: Zuerst zeigt sie "Songinfos – Kategorie: ..." an.
+// Beim Klicken toggelt sie zwischen kompakter und erweiterter Ansicht.
+function updateTrackDetails(track, category) {
   currentTrack = track;
   trackDetailsExpanded = false;
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
-    detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
+    detailsContainer.innerHTML = `<p id="track-info">Songinfos – Kategorie: ${category}</p>`;
     detailsContainer.style.display = 'block';
     detailsContainer.onclick = function() {
       if (!trackDetailsExpanded) {
@@ -79,12 +88,13 @@ function updateTrackDetails(track, addedBy) {
           <p id="track-title">Titel: ${track.name}</p>
           <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
           <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
-          <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
+          <p id="track-added">Hinzugefügt von: ${track.added_by ? track.added_by.id : "unbekannt"}</p>
+          <p id="track-category">Kategorie: ${category}</p>
         `;
         detailsContainer.innerHTML = fullDetails;
         trackDetailsExpanded = true;
       } else {
-        detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
+        detailsContainer.innerHTML = `<p id="track-info">Songinfos – Kategorie: ${category}</p>`;
         trackDetailsExpanded = false;
       }
     };
@@ -168,6 +178,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   
+  // Setze gespeicherte Playlist URL in der Anzeige
+  const playlistDisplay = document.getElementById('playlist-display');
+  const storedPlaylistUrl = localStorage.getItem('mobilePlaylistUrl');
+  if (playlistDisplay && storedPlaylistUrl) {
+    playlistDisplay.textContent = "Gespeicherte Playlist: " + storedPlaylistUrl;
+  }
+  
+  // Lade Kategorien
+  mobileCategories = loadCategories();
+  console.log("Geladene Kategorien:", mobileCategories);
+  
   // AudioContext aktivieren (iOS)
   document.addEventListener('touchstart', function resumeAudioContext() {
     if (window.AudioContext || window.webkitAudioContext) {
@@ -177,23 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  // Event Listener für den "Playlist einlesen"-Button
-  const cacheButton = document.getElementById('cache-button');
-  if (cacheButton) {
-    cacheButton.addEventListener('click', loadPlaylist);
-  } else {
-    console.error("cache-button not found");
-  }
+  // Lade die Playlist (aus dem gespeicherten URL)
+  loadPlaylist();
   
-  // Event Listener für den Play-Button (zum direkten Abspielen eines zufälligen Songs)
+  // Event Listener für den Play-Button (zum Abspielen eines zufälligen Songs)
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
       if (!cachedPlaylistTracks) {
-        M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
+        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
         return;
       }
-      // Wähle einen neuen zufälligen Song aus
       const randomItem = getRandomTrack(cachedPlaylistTracks);
       console.log("Random Item:", randomItem);
       if (!randomItem || !randomItem.track) {
@@ -202,8 +217,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
-      // Aktualisiere die Songdetails-Box; übergebe hier auch added_by
-      updateTrackDetails(randomItem.track, randomItem.added_by);
+      // Wähle zufällig eine Kategorie aus
+      let randomCategory = "";
+      if (mobileCategories && mobileCategories.length > 0) {
+        const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+        randomCategory = mobileCategories[randomIndex];
+      }
+      console.log("Ausgewählte Kategorie:", randomCategory);
+      updateTrackDetails(randomItem.track, randomCategory);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
