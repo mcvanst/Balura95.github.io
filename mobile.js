@@ -267,32 +267,6 @@ let spotifySDKReady = new Promise((resolve) => {
       };
 
       // Resume Playback: sende einen leeren JSON-Body, damit die Wiedergabe fortgesetzt wird
-      window.resumePlayback = async function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) return false;
-        try {
-          let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-            method: 'PUT',
-            body: JSON.stringify({}), // Leerer Body
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.status === 204) {
-            console.log("Playback resumed successfully.");
-            return true;
-          } else {
-            const data = await response.json();
-            console.error("Error resuming playback:", data);
-            return false;
-          }
-        } catch (error) {
-          console.error("Error resuming playback:", error);
-          return false;
-        }
-      };
-
       window.stopPlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
@@ -307,12 +281,38 @@ let spotifySDKReady = new Promise((resolve) => {
           if (response.status === 204) {
             console.log("Playback stopped.");
           } else {
-            // Versuche, den Text anstatt JSON zu parsen
             const errorText = await response.text();
             console.error("Error stopping playback:", errorText);
           }
         } catch (error) {
           console.error("Error stopping track:", error);
+        }
+      };
+      
+      window.resumePlayback = async function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return false;
+        try {
+          let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
+            method: 'PUT',
+            // Sende einen leeren Body, um Resume zu triggern
+            body: JSON.stringify({}),
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.status === 204) {
+            console.log("Playback resumed successfully.");
+            return true;
+          } else {
+            const errorText = await response.text();
+            console.error("Error resuming playback:", errorText);
+            return false;
+          }
+        } catch (error) {
+          console.error("Error resuming playback:", error);
+          return false;
         }
       };
       
