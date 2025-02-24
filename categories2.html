@@ -28,6 +28,12 @@
     @keyframes fadeIn {
       to { opacity: 1; }
     }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -38,20 +44,28 @@
         <div id="players-container">
           <h5>Mitspieler</h5>
           <div class="input-field">
-            <input class="player-input" type="text" placeholder="Mitspieler 1">
+            <input class="player-input" type="text" value="">
             <label>Mitspieler</label>
           </div>
         </div>
-        <button id="add-player" class="btn waves-effect waves-light blue" style="margin-top:10px;">
-          <i class="material-icons left">add</i> Mitspieler hinzufügen
-        </button>
+        <div class="button-group">
+          <button id="add-player" class="btn waves-effect waves-light blue">
+            <i class="material-icons">add</i>
+          </button>
+          <button id="remove-player" class="btn waves-effect waves-light red">
+            <i class="material-icons">remove</i>
+          </button>
+        </div>
         <div class="input-field" style="margin-top:20px;">
-          <input id="winning-score" type="number" min="1" placeholder="10">
+          <input id="winning-score" type="number" min="1" value="">
           <label for="winning-score">Gewinnpunkte (z. B. 10)</label>
         </div>
         <button id="confirm-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           Bestätigen
         </button>
+      </div>
+      <div class="card-action">
+        <a href="menu.html" class="btn-large waves-effect waves-light orange">Zurück zum Menü</a>
       </div>
     </div>
   </div>
@@ -60,14 +74,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Mitspieler hinzufügen
       document.getElementById('add-player').addEventListener('click', () => {
         const container = document.getElementById('players-container');
         const div = document.createElement('div');
         div.className = 'input-field';
-        div.innerHTML = '<input class="player-input" type="text" placeholder="Neuer Mitspieler"><label>Mitspieler</label>';
+        div.innerHTML = '<input class="player-input" type="text" value=""><label>Mitspieler</label>';
         container.appendChild(div);
       });
       
+      // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
+      document.getElementById('remove-player').addEventListener('click', () => {
+        const container = document.getElementById('players-container');
+        const fields = container.querySelectorAll('.input-field');
+        if (fields.length > 1) {
+          fields[fields.length - 1].remove();
+        }
+      });
+      
+      // Bestätigen-Button: Speichern der Mitspieler und Gewinnpunkte, dann Weiterleitung zu mobil.html
       document.getElementById('confirm-button').addEventListener('click', () => {
         const playerInputs = document.querySelectorAll('.player-input');
         let players = [];
@@ -89,6 +114,7 @@
         }
         localStorage.setItem('winningScore', winningScore.toString());
         
+        // Initialisiere den aktuellen Spieler-Index und Scores
         localStorage.setItem('currentPlayerIndex', "0");
         let playerScores = new Array(players.length).fill(0);
         localStorage.setItem('playerScores', JSON.stringify(playerScores));

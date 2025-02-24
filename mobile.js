@@ -1,14 +1,16 @@
+// mobile.js
+
 // Globale Variablen
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
-let mobileCategories = [];
-let mobilePlayers = [];
+let mobileCategories = []; // Wird in categorie1.html gespeichert
+let mobilePlayers = [];    // Wird in categorie2.html gespeichert
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
-// Es gibt keinen separaten Stop/Resume-Button mehr – stopPlayback wird über die Bewertungsbuttons ausgeführt
+let firstRound = true;     // Beim allerersten Song bleibt Spieler 1 aktiv
 
 // Hilfsfunktionen
+
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
@@ -183,7 +185,8 @@ function updateTrackDetails(track, addedBy) {
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
-    categoryHeading.textContent = "Kategorie: " + (category || "Keine Kategorie");
+    // Falls keine Kategorie angegeben wurde, wird nichts angezeigt
+    categoryHeading.textContent = category ? "Kategorie: " + category : "";
   }
 }
 
@@ -347,8 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Bewertungsbuttons aktiv, aber "Nächster Song" deaktiviert
-  // (Start-Button sichtbar, Steuerungsbereich ausgeblendet)
+  // Initialer Zustand:
+  // Start-Button sichtbar, Steuerungsbereich (control-buttons) ausgeblendet.
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -357,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startButton && controlButtons && correctButton && wrongButton && playButton) {
     startButton.style.display = 'block';
     controlButtons.style.display = 'none';
+    // Bewertungsbuttons sollen beim Start aktiv sein
     correctButton.disabled = false;
     wrongButton.disabled = false;
     playButton.disabled = false;
@@ -367,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Event Listener für den Start-Button
   startButton.addEventListener('click', async () => {
+    // Blende den Start-Button aus und zeige den Steuerungsbereich sowie Score & Info
     startButton.style.display = 'none';
     controlButtons.style.display = 'block';
     document.getElementById('score-display').style.display = 'block';
@@ -406,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
     // Nach Songstart: "Nächster Song" deaktivieren
     playButton.disabled = true;
-    // Hier rufen wir stopPlayback NICHT separat auf – es wird über die Bewertungsbuttons getriggert.
   });
   
   // Event Listener für den "Nächster Song"-Button
@@ -448,10 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Bewertungsbuttons: Beim Klick wird automatisch stopPlayback ausgeführt,
-  // anschließend werden "Nächster Song" wieder aktiviert und die Buttons deaktiviert.
+  // danach werden "Nächster Song" aktiviert.
   const correctBtn = document.getElementById('correct-button');
   correctBtn.addEventListener('click', async () => {
-    // Stoppe Playback vor der Bewertung
     if (window.stopPlayback) await window.stopPlayback();
     correctBtn.disabled = true;
     wrongButton.disabled = true;
@@ -462,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerScores[currentPlayerIndex] >= winningScore) {
       showGameOverOverlay();
     }
-    // Nach Bewertung: Reaktiviere "Nächster Song"
+    // Nach Bewertung: "Nächster Song" aktivieren
     playButton.disabled = false;
   });
   
@@ -488,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'menu.html';
   });
 });
-
 
 // Hilfsfunktion zur iOS-Erkennung
 function isIOS() {
