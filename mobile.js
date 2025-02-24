@@ -1,13 +1,16 @@
-// --- Hilfsfunktionen und globale Variablen ---
+// Globale Variablen
+let cachedPlaylistTracks = null;
+let selectedTrackUri = null;
+let mobileCategories = [];
 
-// Extrahiere die Playlist-ID aus einer URL
+// Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
 
-// Liefert die gespeicherte Playlist-URL aus categories.html
+// Liefert die gespeicherte Playlist-URL (wird in categories.html gesetzt)
 function getStoredPlaylistUrl() {
   return localStorage.getItem('mobilePlaylistUrl') || "";
 }
@@ -25,12 +28,6 @@ function loadCategories() {
   }
   return [];
 }
-
-// Globale Variablen
-let cachedPlaylistTracks = null;
-let selectedTrackUri = null;
-let currentTrack = null;
-let mobileCategories = [];
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
 async function fetchPlaylistTracks(playlistId) {
@@ -56,7 +53,7 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion zum Laden der Playlist aus der gespeicherten URL
+// Funktion zum Laden der Playlist aus dem gespeicherten Wert
 async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
@@ -74,39 +71,22 @@ async function loadPlaylist() {
   }
 }
 
-// Wähle einen zufälligen Track aus
+// Funktion: Zufälligen Track aus dem Array auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
   return tracks[randomIndex];
 }
 
-// Aktualisiere die Trackdetails-Box (nur Songinfos, inkl. "Hinzugefügt von")
-function updateTrackDetails(track, addedBy) {
-  const detailsContainer = document.getElementById('track-details');
-  if (detailsContainer) {
-    detailsContainer.innerHTML = `
-      <p id="track-info">Songinfos</p>
-      <p id="track-title">Titel: ${track.name}</p>
-      <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
-      <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
-      <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
-    `;
-    detailsContainer.style.display = 'block';
-  }
-}
-
-// Aktualisiere die Kategorie-Box separat
+// Aktualisiere den Kategorie-Header (ganz oben)
 function updateCategoryDisplay(category) {
-  const catContainer = document.getElementById('category-display');
-  if (catContainer) {
-    catContainer.innerHTML = `<p id="category-info">Kategorie: ${category}</p>`;
-    catContainer.style.display = 'block';
+  const categoryHeading = document.getElementById('category-heading');
+  if (categoryHeading) {
+    categoryHeading.textContent = "Kategorie: " + category;
   }
 }
 
-// --- Spotify Web Playback SDK Setup ---
-
+// Promise, das aufgelöst wird, sobald der Spotify SDK bereit ist
 let spotifySDKReady = new Promise((resolve) => {
   window.onSpotifyWebPlaybackSDKReady = () => {
     const token = localStorage.getItem('access_token');
@@ -151,7 +131,7 @@ let spotifySDKReady = new Promise((resolve) => {
             method: 'PUT',
             body: JSON.stringify({ uris: [trackUri] }),
             headers: { 
-              'Authorization': `Bearer ${token}`, 
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -179,7 +159,7 @@ let spotifySDKReady = new Promise((resolve) => {
           let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
             method: 'PUT',
             headers: { 
-              'Authorization': `Bearer ${token}`, 
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -198,15 +178,14 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// --- DOMContentLoaded-Block für Event Listener ---
-
+// DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
-
-  // Lade die gespeicherten Kategorien aus categories.html
+  
+  // Lade die gespeicherten Kategorien
   mobileCategories = loadCategories();
   console.log("Geladene Kategorien:", mobileCategories);
   
@@ -219,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  // Playlist laden (aus dem gespeicherten Wert)
+  // Lade die Playlist (aus dem gespeicherten Wert)
   loadPlaylist();
   
   // Event Listener für den Play-Button
@@ -230,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
         return;
       }
-      // Wähle immer einen neuen zufälligen Song aus
       const randomItem = getRandomTrack(cachedPlaylistTracks);
       console.log("Random Item:", randomItem);
       if (!randomItem || !randomItem.track) {
@@ -246,8 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         randomCategory = mobileCategories[randomIndex];
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
-      // Aktualisiere die getrennten Boxen
-      updateTrackDetails(randomItem.track, randomItem.added_by);
+      // Aktualisiere den Kategorie-Header (ganz oben)
       updateCategoryDisplay(randomCategory);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
