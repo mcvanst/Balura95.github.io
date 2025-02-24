@@ -1,10 +1,3 @@
-// Funktion zum Extrahieren der Playlist-ID aus einer URL
-function extractPlaylistId(url) {
-  const regex = /playlist\/([a-zA-Z0-9]+)/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
-}
-
 // Globale Variablen
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
@@ -12,18 +5,11 @@ let currentTrack = null;
 let trackDetailsExpanded = false;
 let mobileCategories = [];
 
-// Funktion zum Laden der Kategorien aus localStorage (aus categories.html)
-function loadCategories() {
-  const catStr = localStorage.getItem('mobileCategories');
-  if (catStr) {
-    try {
-      return JSON.parse(catStr);
-    } catch (e) {
-      console.error("Error parsing categories:", e);
-      return [];
-    }
-  }
-  return [];
+// Funktion zum Extrahieren der Playlist-ID aus der URL
+function extractPlaylistId(url) {
+  const regex = /playlist\/([a-zA-Z0-9]+)/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
 }
 
 // Funktion zum Abrufen und Cachen der Playlist-Tracks
@@ -50,7 +36,7 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion zum Laden der Playlist (verwenden des in categories.html gespeicherten Werts)
+// Funktion zum Laden der Playlist aus dem gespeicherten Wert
 async function loadPlaylist() {
   const playlistUrl = localStorage.getItem('mobilePlaylistUrl') || "";
   console.log("Stored Playlist URL:", playlistUrl);
@@ -68,14 +54,14 @@ async function loadPlaylist() {
   }
 }
 
-// Wähle einen zufälligen Track aus einem Array aus
+// Wähle einen zufälligen Track aus dem Array aus
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
   return tracks[randomIndex];
 }
 
-// Aktualisiert die Trackdetails-Box. Zeigt initial "Songinfos – Kategorie: ..." an und toggelt bei Klick.
+// Aktualisiert die Trackdetails-Box
 function updateTrackDetails(track, category) {
   currentTrack = track;
   trackDetailsExpanded = false;
@@ -130,6 +116,7 @@ let spotifySDKReady = new Promise((resolve) => {
       console.error('Playback Error:', message);
     });
     player.connect().then(() => {
+      // Definiere window.playTrack
       window.playTrack = async function(trackUri) {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
@@ -167,6 +154,29 @@ let spotifySDKReady = new Promise((resolve) => {
           return false;
         }
       };
+
+      // Definiere window.stopPlayback
+      window.stopPlayback = async function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        try {
+          let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
+            method: 'PUT',
+            headers: { 
+              'Authorization': `Bearer ${token}`, 
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.status === 204) {
+            console.log("Playback stopped.");
+          } else {
+            console.error("Error stopping playback:", await response.json());
+          }
+        } catch (error) {
+          console.error("Error stopping track:", error);
+        }
+      };
+
       resolve();
     });
   };
@@ -187,7 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Lade Kategorien aus localStorage
-  mobileCategories = loadCategories();
+  // (Diese Funktion müsste in categories.html gesetzt worden sein)
+  try {
+    mobileCategories = JSON.parse(localStorage.getItem('mobileCategories')) || [];
+  } catch (e) {
+    mobileCategories = [];
+  }
   console.log("Geladene Kategorien:", mobileCategories);
   
   // AudioContext aktivieren (iOS)
@@ -248,8 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopButton = document.getElementById('stop-button');
   if (stopButton) {
     stopButton.addEventListener('click', async () => {
-      await window.stopPlayback();
-      M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+      if (window.stopPlayback) {
+        await window.stopPlayback();
+        M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+      } else {
+        console.error("stopPlayback is not defined");
+      }
     });
   } else {
     console.error("stop-button not found");
