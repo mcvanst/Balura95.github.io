@@ -6,7 +6,7 @@ let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
 let firstRound = true;  // Für die erste Runde: Spieler 1 bleibt dran
-let isPaused = false;   // Für Pause/Resume
+let isPaused = false;   // Status des Stop/Resume-Buttons
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -163,7 +163,7 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
+// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
 // Der Songtitel wird so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
@@ -266,7 +266,7 @@ let spotifySDKReady = new Promise((resolve) => {
         }
       };
 
-      // Stop/Resume Toggle: Wenn aktuell nicht pausiert, stoppe; ansonsten resume.
+      // Resume Playback: versucht die Wiedergabe fortzusetzen (ohne neue URI)
       window.resumePlayback = async function() {
         const token = localStorage.getItem('access_token');
         if (!token) return false;
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" und "Stop Playback" (Pause) aktiv
+  // Setze initial den Zustand: Bewertungsbuttons deaktiviert, "Nächster Song" (playButton) und Stop/Resume-Button aktiv
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
@@ -371,7 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Beim allerersten Mal aktiv
     playButton.disabled = false;
     stopButton.disabled = false;
-    stopButton.textContent = "Stop Playback";
+    // Initial: Stop-Button zeigt Pause-Icon
+    stopButton.innerHTML = '<i class="material-icons">pause</i>';
   }
   
   // Event Listener für den "Nächster Song"-Button
@@ -408,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nach Songstart: Beim ersten Mal bleibt currentPlayerIndex = 0, danach inkrementieren
+      // Nach Songstart: Bei der ersten Runde bleibt currentPlayerIndex = 0, danach inkrementieren
       if (!firstRound) {
         currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
       } else {
@@ -417,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-      // Nach Songstart: "Nächster Song" deaktivieren, Stop-Button bleibt aktiv (zum Pausieren)
+      // Nach Songstart: "Nächster Song" deaktivieren, Stop-Button bleibt aktiv
       playButton.disabled = true;
     });
   } else {
@@ -432,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await window.stopPlayback();
           M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
           isPaused = true;
-          stopButton.textContent = "Resume";
+          stopButton.innerHTML = '<i class="material-icons">play_arrow</i>';
         } else {
           console.error("stopPlayback is not defined");
         }
@@ -442,17 +443,16 @@ document.addEventListener('DOMContentLoaded', () => {
           if (resumed) {
             M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
             isPaused = false;
-            stopButton.textContent = "Stop Playback";
+            stopButton.innerHTML = '<i class="material-icons">pause</i>';
           } else {
             M.toast({ html: "Fehler beim Fortsetzen", classes: "rounded", displayLength: 2000 });
           }
         } else {
-          // Falls resumePlayback nicht definiert – versuche playTrack erneut
           const resumed = await window.playTrack(selectedTrackUri);
           if (resumed) {
             M.toast({ html: "Playback fortgesetzt", classes: "rounded", displayLength: 2000 });
             isPaused = false;
-            stopButton.textContent = "Stop Playback";
+            stopButton.innerHTML = '<i class="material-icons">pause</i>';
           }
         }
       }
@@ -517,15 +517,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Spotify Web Playback SDK Setup – Die Deklaration von spotifySDKReady erfolgt nur einmal oben
+// Spotify SDK Setup – Die Deklaration von spotifySDKReady erfolgt nur einmal oben
+
+// Hilfsfunktion zur iOS-Erkennung (falls benötigt)
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
 // Logout-Funktion
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
   window.location.href = 'index.html';
-}
-
-// Hilfsfunktion zur iOS-Erkennung (falls benötigt)
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
