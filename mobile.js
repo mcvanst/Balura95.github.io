@@ -1,6 +1,5 @@
-// Globale Variable zum Zwischenspeichern der Playlist-Tracks
+// Globale Variablen zum Zwischenspeichern der Playlist-Tracks und der ausgewählten Track-URI
 let cachedPlaylistTracks = null;
-// Globale Variable zum Speichern der ausgewählten Track-URI
 let selectedTrackUri = null;
 
 // Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
@@ -47,7 +46,7 @@ async function loadPlaylist() {
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-    // Zeige den Play-Button an, damit der Nutzer einen Song abspielen kann
+    // Zeige den Play-Button an
     document.getElementById('play-button').style.display = 'inline-flex';
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
@@ -61,21 +60,21 @@ function getRandomTrack(tracks) {
   return tracks[randomIndex];
 }
 
-// Funktion, die einen zufälligen Song auswählt und dessen URI in selectedTrackUri speichert
-function selectRandomSong() {
-  if (!cachedPlaylistTracks) {
-    M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
-    return false;
+// Aktualisiere die Anzeige der Songdetails in der separaten Box
+function updateTrackDetails(track) {
+  const titleEl = document.getElementById('track-title');
+  const artistEl = document.getElementById('track-artist');
+  const yearEl = document.getElementById('track-year');
+  if (titleEl && artistEl && yearEl) {
+    titleEl.textContent = "Titel: " + track.name;
+    artistEl.textContent = "Interpret: " + track.artists.map(a => a.name).join(", ");
+    let releaseYear = "-";
+    if (track.album && track.album.release_date) {
+      releaseYear = track.album.release_date.substring(0, 4);
+    }
+    yearEl.textContent = "Erscheinungsjahr: " + releaseYear;
+    document.getElementById('track-details').style.display = 'block';
   }
-  const randomItem = getRandomTrack(cachedPlaylistTracks);
-  console.log("Random Item:", randomItem);
-  if (!randomItem || !randomItem.track) {
-    M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
-    return false;
-  }
-  selectedTrackUri = randomItem.track.uri;
-  console.log("Ausgewählte Track URI:", selectedTrackUri);
-  return true;
 }
 
 // Promise, das aufgelöst wird, sobald der Spotify SDK bereit ist
@@ -150,7 +149,6 @@ let spotifySDKReady = new Promise((resolve) => {
 
 // Konsolidierter DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
-  // Falls kein Access Token vorhanden, umleiten
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
@@ -177,11 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
-      // Zuerst zufällig einen Song auswählen
-      if (!selectRandomSong()) {
+      // Wähle immer einen neuen zufälligen Song aus
+      if (!cachedPlaylistTracks) {
+        M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
         return;
       }
-      console.log("Playing track URI:", selectedTrackUri);
+      const randomItem = getRandomTrack(cachedPlaylistTracks);
+      console.log("Random Item:", randomItem);
+      if (!randomItem || !randomItem.track) {
+        M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      selectedTrackUri = randomItem.track.uri;
+      console.log("Ausgewählte Track URI:", selectedTrackUri);
+      // Aktualisiere die Songdetails
+      updateTrackDetails(randomItem.track);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
@@ -205,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Logout-Funktion
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
