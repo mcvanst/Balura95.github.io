@@ -5,6 +5,7 @@ let mobileCategories = [];
 let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
+let firstRound = true;  // Neue Variable: Für die erste Runde
 
 // Funktion: Extrahiere die Playlist-ID aus einer URL
 function extractPlaylistId(url) {
@@ -97,7 +98,6 @@ function showGameOverOverlay() {
       row.appendChild(scoreCell);
       scoreTableBody.appendChild(row);
     }
-    // Gewinner anzeigen mit Krone (Material Icon "emoji_events")
     const winnerHeading = document.getElementById('winner-heading');
     if (winnerHeading && winnerIndex !== -1) {
       winnerHeading.innerHTML = `<i class="material-icons">emoji_events</i> Gewinner: ${mobilePlayers[winnerIndex]}`;
@@ -106,7 +106,7 @@ function showGameOverOverlay() {
   }
 }
 
-// Lade die Gewinnpunktzahl aus localStorage
+// Gewinnpunktzahl laden
 function getWinningScore() {
   const scoreStr = localStorage.getItem('winningScore');
   return scoreStr ? parseInt(scoreStr, 10) : 10;
@@ -154,7 +154,7 @@ async function loadPlaylist() {
   }
 }
 
-// Funktion: Zufälligen Track aus dem Array auswählen
+// Funktion: Zufälligen Track auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -163,7 +163,7 @@ function getRandomTrack(tracks) {
 
 // Aktualisiert die Songinfos-Box.
 // Zuerst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
-// Dabei wird der Songtitel so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
+// Der Songtitel wird bearbeitet, sodass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
@@ -196,7 +196,8 @@ function updateTrackDetails(track, addedBy) {
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
-    categoryHeading.textContent = "Kategorie: " + category;
+    // Falls keine Kategorie vorhanden, wird "Keine Kategorie" angezeigt
+    categoryHeading.textContent = "Kategorie: " + (category || "Keine Kategorie");
   }
 }
 
@@ -334,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Vor jedem Songstart: Reaktiviere die Bewertungsbuttons
+  // Vor jedem Songstart: Reaktiviere Bewertungsbuttons
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   if (correctButton && wrongButton) {
@@ -363,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
-      // Wähle zufällig eine Kategorie aus
+      // Wähle zufällig eine Kategorie aus (optional, falls keine vorhanden, dann leer)
       let randomCategory = "";
       if (mobileCategories && mobileCategories.length > 0) {
         const randomIndex = Math.floor(Math.random() * mobileCategories.length);
@@ -377,8 +378,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
       }
-      // Nachdem ein Song gespielt wurde, wechseln wir zum nächsten Spieler
-      currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
+      // Nach Songstart: Wechsel zum nächsten Spieler (außer in der ersten Runde)
+      if (!firstRound) {
+        currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
+      } else {
+        firstRound = false;
+      }
       saveCurrentPlayerIndex(currentPlayerIndex);
       updateScoreDisplay();
       updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
@@ -411,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
       playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
       localStorage.setItem('playerScores', JSON.stringify(playerScores));
       updateScoreDisplay();
-      // Prüfe, ob Gewinnpunktzahl erreicht wurde
       const winningScore = getWinningScore();
       if (playerScores[currentPlayerIndex] >= winningScore) {
         showGameOverOverlay();
@@ -452,14 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
-// Gewinnpunktzahl laden
-function getWinningScore() {
-  const scoreStr = localStorage.getItem('winningScore');
-  return scoreStr ? parseInt(scoreStr, 10) : 10;
-}
-
-// Spotify Web Playback SDK Setup (siehe oben) – Code bereits eingefügt
 
 // Logout-Funktion
 function logout() {
