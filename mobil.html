@@ -13,8 +13,19 @@
   <link rel="stylesheet" href="styles.css">
   <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <style>
+    /* Score display oben rechts */
+    #score-display {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <div id="score-display">Score: 0</div>
   <div class="container" style="margin-top:20px;">
     <!-- Überschrift für die zufällig ausgewählte Kategorie -->
     <h5 id="category-heading" style="text-align:center; margin-bottom:10px;"></h5>
@@ -23,14 +34,22 @@
     
     <div class="card z-depth-3 center-align fade-in">
       <div class="card-content">
-        <!-- Keine Eingabefelder mehr – Playlist und Mitspieler sind bereits gespeichert -->
-        <!-- Buttons: Song abspielen und Stop Playback -->
+        <!-- Buttons: Song abspielen, Stop Playback -->
         <button id="play-button" class="btn-large waves-effect waves-light green" style="margin-top:20px;">
           <i class="material-icons left">play_arrow</i> Song abspielen
         </button>
         <button id="stop-button" class="btn-large waves-effect waves-light red" style="margin-top:20px;">
           <i class="material-icons left">stop</i> Stop Playback
         </button>
+        <!-- Buttons für Richtig/Falsch -->
+        <div style="margin-top:20px;">
+          <button id="correct-button" class="btn-large waves-effect waves-light green">
+            <i class="material-icons">check</i>
+          </button>
+          <button id="wrong-button" class="btn-large waves-effect waves-light red">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
       </div>
       <div class="card-action">
         <a href="menu.html" class="btn-large waves-effect waves-light blue">Zurück zum Menü</a>
