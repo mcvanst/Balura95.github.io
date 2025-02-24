@@ -1,6 +1,8 @@
-// Globale Variablen zum Zwischenspeichern der Playlist-Tracks und der ausgewählten Track-URI
+// Globale Variablen
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
+let currentTrack = null;
+let trackDetailsExpanded = false;
 
 // Hilfsfunktion: Extrahiere die Playlist-ID aus der URL
 function extractPlaylistId(url) {
@@ -46,8 +48,9 @@ async function loadPlaylist() {
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-    // Zeige den Play-Button an
+    // Zeige den Play-Button und Stop-Button an
     document.getElementById('play-button').style.display = 'inline-flex';
+    document.getElementById('stop-button').style.display = 'inline-flex';
   } else {
     M.toast({ html: "Keine Songs in dieser Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
@@ -60,20 +63,30 @@ function getRandomTrack(tracks) {
   return tracks[randomIndex];
 }
 
-// Aktualisiere die Anzeige der Songdetails in der separaten Box
+// Aktualisiere die Anzeige der Songdetails (initial nur Titel; bei Klick vollständige Details)
 function updateTrackDetails(track) {
-  const titleEl = document.getElementById('track-title');
-  const artistEl = document.getElementById('track-artist');
-  const yearEl = document.getElementById('track-year');
-  if (titleEl && artistEl && yearEl) {
-    titleEl.textContent = "Titel: " + track.name;
-    artistEl.textContent = "Interpret: " + track.artists.map(a => a.name).join(", ");
-    let releaseYear = "-";
-    if (track.album && track.album.release_date) {
-      releaseYear = track.album.release_date.substring(0, 4);
-    }
-    yearEl.textContent = "Erscheinungsjahr: " + releaseYear;
-    document.getElementById('track-details').style.display = 'block';
+  currentTrack = track;
+  trackDetailsExpanded = false;
+  const detailsContainer = document.getElementById('track-details');
+  if (detailsContainer) {
+    // Zeige zunächst nur den Titel an
+    detailsContainer.innerHTML = `<p id="track-title">Titel: ${track.name}</p>`;
+    detailsContainer.style.display = 'block';
+    // Beim Klick auf den Container toggeln zwischen nur Titel und vollständigen Details
+    detailsContainer.onclick = function() {
+      if (!trackDetailsExpanded) {
+        const fullDetails = `
+          <p id="track-title">Titel: ${track.name}</p>
+          <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
+          <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
+        `;
+        detailsContainer.innerHTML = fullDetails;
+        trackDetailsExpanded = true;
+      } else {
+        detailsContainer.innerHTML = `<p id="track-title">Titel: ${track.name}</p>`;
+        trackDetailsExpanded = false;
+      }
+    };
   }
 }
 
@@ -171,11 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error("cache-button not found");
   }
   
-  // Event Listener für den Play-Button (zum direkten Abspielen eines zufälligen Songs)
+  // Event Listener für den Play-Button (zum Abspielen eines zufälligen Songs)
   const playButton = document.getElementById('play-button');
   if (playButton) {
     playButton.addEventListener('click', async () => {
-      // Wähle immer einen neuen zufälligen Song aus
       if (!cachedPlaylistTracks) {
         M.toast({ html: "Bitte zuerst die Playlist einlesen.", classes: "rounded", displayLength: 2000 });
         return;
@@ -188,7 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedTrackUri = randomItem.track.uri;
       console.log("Ausgewählte Track URI:", selectedTrackUri);
-      // Aktualisiere die Songdetails
       updateTrackDetails(randomItem.track);
       await spotifySDKReady;
       const success = await window.playTrack(selectedTrackUri);
@@ -198,6 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   } else {
     console.error("play-button not found");
+  }
+  
+  // Event Listener für den Stop-Playback-Button
+  const stopButton = document.getElementById('stop-button');
+  if (stopButton) {
+    stopButton.addEventListener('click', async () => {
+      await window.stopPlayback();
+      M.toast({ html: "Playback gestoppt", classes: "rounded", displayLength: 2000 });
+    });
+  } else {
+    console.error("stop-button not found");
   }
   
   // Event Listener für den Reset-Button
@@ -213,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Logout-Funktion
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
