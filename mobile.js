@@ -307,12 +307,15 @@ let spotifySDKReady = new Promise((resolve) => {
           if (response.status === 204) {
             console.log("Playback stopped.");
           } else {
-            console.error("Error stopping playback:", await response.json());
+            // Versuche, den Text anstatt JSON zu parsen
+            const errorText = await response.text();
+            console.error("Error stopping playback:", errorText);
           }
         } catch (error) {
           console.error("Error stopping track:", error);
         }
       };
+      
 
       resolve();
     });
