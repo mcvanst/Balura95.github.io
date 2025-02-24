@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       console.log("Playing track URI:", selectedTrackUri);
       await spotifySDKReady;
+      console.log("Device ID:", window.deviceId);
       const success = await window.playTrack(selectedTrackUri);
       if (!success) {
         M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
