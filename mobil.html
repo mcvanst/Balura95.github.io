@@ -28,7 +28,7 @@
       text-align: center;
       position: relative;
     }
-    /* Score display oben rechts */
+    /* Scoreanzeige oben rechts */
     #score-display {
       position: absolute;
       top: 10px;
@@ -37,7 +37,7 @@
       font-weight: bold;
       display: none;
     }
-    /* Scoreboard-Button oben links */
+    /* Scoreboard-Button oben links, initial versteckt */
     #scoreboard-btn {
       position: absolute;
       top: 10px;
@@ -50,7 +50,7 @@
       height: 50px;
       font-size: 24px;
       cursor: pointer;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
     }
@@ -59,7 +59,7 @@
       width: 150px;
       height: 150px;
       border-radius: 50%;
-      background-color: #4CAF50;
+      background-color: #4CAF50; /* kräftiges Grün */
       color: #fff;
       border: none;
       font-size: 28px;
@@ -97,14 +97,14 @@
       background: rgba(255,255,255,0.85);
       border-radius: 8px;
     }
-    /* Game-Over-Overlay */
+    /* Game‑Over‑Overlay */
     #game-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0, 0, 0, 0.85);
       color: #fff;
       display: none;
       align-items: center;
@@ -131,7 +131,7 @@
       padding: 8px;
       text-align: center;
     }
-    /* Scoreboard-Overlay */
+    /* Scoreboard‑Overlay */
     #score-overlay {
       position: fixed;
       top: 0;
@@ -173,7 +173,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    /* Reset-Button fixiert unten */
+    /* Reset‑Button fixiert unten */
     .reset-btn {
       position: fixed;
       bottom: 10px;
@@ -183,7 +183,7 @@
   </style>
 </head>
 <body>
-  <!-- Scoreboard-Button oben links -->
+  <!-- Scoreboard-Button oben links, initial versteckt -->
   <button id="scoreboard-btn"><i class="material-icons">list</i></button>
   <!-- Scoreanzeige, Kategorie & aktueller Spieler -->
   <div id="score-display">Score: 0</div>
@@ -217,7 +217,7 @@
     </div>
   </div>
   
-  <!-- Game Over Overlay -->
+  <!-- Game‑Over‑Overlay -->
   <div id="game-overlay">
     <h4 id="winner-heading"></h4>
     <table id="score-table">
@@ -234,7 +234,7 @@
     <button id="overlay-menu-btn" class="btn-large waves-effect waves-light blue">Zurück zum Menü</button>
   </div>
   
-  <!-- Scoreboard Overlay -->
+  <!-- Scoreboard‑Overlay -->
   <div id="score-overlay">
     <h4>Aktuelle Punktestände</h4>
     <table id="scoreboard-table">
@@ -251,7 +251,7 @@
     <button class="close-btn" id="close-score-overlay">Schließen</button>
   </div>
   
-  <!-- Reset-Button -->
+  <!-- Reset‑Button -->
   <button id="reset-app" class="btn reset-btn">App zurücksetzen</button>
   
   <!-- Materialize JS -->
