@@ -8,19 +8,17 @@ let playerScores = [];
 let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
 let isPaused = false;   // Status für Pause/Resume
 
-// Funktion: Extrahiere die Playlist-ID aus einer URL
+// Hilfsfunktionen
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
 
-// Liefert die gespeicherte Playlist-URL
 function getStoredPlaylistUrl() {
   return localStorage.getItem('mobilePlaylistUrl') || "";
 }
 
-// Lade gespeicherte Kategorien
 function loadCategories() {
   const catStr = localStorage.getItem('mobileCategories');
   if (catStr) {
@@ -34,7 +32,6 @@ function loadCategories() {
   return [];
 }
 
-// Lade gespeicherte Mitspieler
 function loadPlayers() {
   const playersStr = localStorage.getItem('mobilePlayers');
   if (playersStr) {
@@ -48,18 +45,15 @@ function loadPlayers() {
   return [];
 }
 
-// Lade aktuellen Spieler-Index
 function loadCurrentPlayerIndex() {
   const index = localStorage.getItem('currentPlayerIndex');
   return index ? parseInt(index) : 0;
 }
 
-// Speichere aktuellen Spieler-Index
 function saveCurrentPlayerIndex(index) {
   localStorage.setItem('currentPlayerIndex', index.toString());
 }
 
-// Aktualisiere die Scoreanzeige (oben rechts)
 function updateScoreDisplay() {
   const scoreDisplay = document.getElementById('score-display');
   const currentPlayer = mobilePlayers[currentPlayerIndex] || "Unbekannt";
@@ -70,7 +64,6 @@ function updateScoreDisplay() {
   }
 }
 
-// Aktualisiere die Anzeige des aktuellen Mitspielers (unterhalb der Kategorie)
 function updatePlayerDisplay(playerName) {
   const playerTurn = document.getElementById('player-turn');
   if (playerTurn) {
@@ -79,7 +72,6 @@ function updatePlayerDisplay(playerName) {
   }
 }
 
-// Zeige das Game-Over-Overlay mit Gewinner (mit Krone)
 function showGameOverOverlay() {
   const overlay = document.getElementById('game-overlay');
   const scoreTableBody = document.querySelector('#score-table tbody');
@@ -109,13 +101,11 @@ function showGameOverOverlay() {
   }
 }
 
-// Gewinnpunktzahl laden
 function getWinningScore() {
   const scoreStr = localStorage.getItem('winningScore');
   return scoreStr ? parseInt(scoreStr, 10) : 10;
 }
 
-// Funktion zum Abrufen und Cachen der Playlist-Tracks
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
   const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
@@ -139,7 +129,6 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
-// Funktion zum Laden der Playlist aus der gespeicherten URL
 async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
@@ -157,16 +146,12 @@ async function loadPlaylist() {
   }
 }
 
-// Funktion: Zufälligen Track aus dem Array auswählen
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
   return tracks[randomIndex];
 }
 
-// Aktualisiert die Songinfos-Box.
-// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
-// Der Songtitel wird so bearbeitet, dass alles ab dem ersten Bindestrich entfernt wird.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
@@ -195,7 +180,6 @@ function updateTrackDetails(track, addedBy) {
   }
 }
 
-// Aktualisiert den Kategorie-Header (ganz oben)
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
@@ -364,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPlaylist();
   
   // Initialer Zustand: Bewertungsbuttons deaktiviert,
-  // Start-Button sichtbar, Steuerungsbereich (play-button, stop-button, Bewertungsbuttons) ausgeblendet.
+  // Start-Button sichtbar, Steuerungsbereich (control-buttons) ausgeblendet.
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -374,9 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startButton && controlButtons && correctButton && wrongButton && playButton && stopButton) {
     startButton.style.display = 'block';
     controlButtons.style.display = 'none';
-    correctButton.disabled = true;
-    wrongButton.disabled = true;
-    playButton.disabled = false;
+    // Für Start: Bewertungsbuttons sollen aktiv sein
+    correctButton.disabled = false;
+    wrongButton.disabled = false;
+    playButton.disabled = false;  // Start-Button soll aktiv sein
     stopButton.disabled = false;
     stopButton.innerHTML = '<i class="material-icons">pause</i>';
     document.getElementById('score-display').style.display = 'none';
@@ -397,8 +382,9 @@ document.addEventListener('DOMContentLoaded', () => {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
       return;
     }
-    correctButton.disabled = true;
-    wrongButton.disabled = true;
+    // Bewertungsbuttons aktiv
+    correctButton.disabled = false;
+    wrongButton.disabled = false;
     const randomItem = getRandomTrack(cachedPlaylistTracks);
     console.log("Random Item:", randomItem);
     if (!randomItem || !randomItem.track) {
@@ -425,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    // Nach Songstart: "Nächster Song" deaktivieren (Stop/Resume bleibt aktiv)
+    // Nach Songstart: "Nächster Song" deaktivieren
     playButton.disabled = true;
   });
   
@@ -435,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
       return;
     }
-    // Reaktiviere Bewertungsbuttons für die neue Runde
     correctButton.disabled = false;
     wrongButton.disabled = false;
     const randomItem = getRandomTrack(cachedPlaylistTracks);
@@ -465,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    // Nach Songstart: "Nächster Song" deaktivieren
     playButton.disabled = true;
   });
   
@@ -513,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerScores[currentPlayerIndex] >= winningScore) {
       showGameOverOverlay();
     }
-    // Nach Bewertung: Reaktiviere "Nächster Song" und Stop/Resume-Button
+    // Nach Bewertung: Reaktiviere "Nächster Song" und den Stop/Resume-Button
     playButton.disabled = false;
     stopButton.disabled = false;
   });
@@ -523,7 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
   wrongBtn.addEventListener('click', () => {
     correctBtn.disabled = true;
     wrongBtn.disabled = true;
-    // Keine Scoreänderung – Buttons wieder aktivieren
     playButton.disabled = false;
     stopButton.disabled = false;
   });
@@ -543,12 +526,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+
 // Hilfsfunktion zur iOS-Erkennung
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
-
-// Spotify SDK Setup – nur eine einzige Deklaration von spotifySDKReady (bereits oben)
 
 // Logout-Funktion
 function logout() {
