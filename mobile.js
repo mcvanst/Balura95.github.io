@@ -81,18 +81,22 @@ function getRandomTrack(tracks) {
 }
 
 // Aktualisiert die Songinfos-Box.
-// Zunächst wird nur "Songinfos" angezeigt. Bei Klick toggelt sie, um alle Details anzuzeigen.
+// Zunächst wird nur "Songinfos" angezeigt; beim Klick toggelt sie zu vollständigen Details.
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
   if (detailsContainer) {
-    // Initial nur "Songinfos" anzeigen
+    // Entferne alles ab dem ersten Bindestrich aus dem Songtitel
+    let title = track.name;
+    if (title.includes("-")) {
+      title = title.split("-")[0].trim();
+    }
     detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
     detailsContainer.style.display = 'block';
-    trackDetailsExpanded = false; // Reset
+    trackDetailsExpanded = false;
     detailsContainer.onclick = function() {
       if (!trackDetailsExpanded) {
         const fullDetails = `
-          <p id="track-title">Titel: ${track.name}</p>
+          <p id="track-title">Titel: ${title}</p>
           <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
           <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
           <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
@@ -107,7 +111,7 @@ function updateTrackDetails(track, addedBy) {
   }
 }
 
-// Aktualisiert den Kategorie-Header (ganz oben ohne Box)
+// Aktualisiert den Kategorie-Header (ganz oben)
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
@@ -129,7 +133,7 @@ let spotifySDKReady = new Promise((resolve) => {
       window.deviceId = device_id;
       console.log("Spotify player ready, device_id:", device_id);
     });
-    // Fehler-Listener (optional)
+    // Optionale Fehler-Listener
     player.addListener('initialization_error', ({ message }) => {
       console.error('Initialization Error:', message);
     });
@@ -207,20 +211,14 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// DOMContentLoaded-Block für alle Event Listener
+// DOMContentLoaded-Block für Event Listener
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
   
-  // Setze den Kategorie-Header initial auf leer (falls vorhanden)
-  const categoryHeading = document.getElementById('category-heading');
-  if (categoryHeading) {
-    categoryHeading.textContent = "";
-  }
-  
-  // Lade die gespeicherten Kategorien aus localStorage
+  // Lade gespeicherte Kategorien aus localStorage
   mobileCategories = loadCategories();
   console.log("Geladene Kategorien:", mobileCategories);
   
@@ -259,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         randomCategory = mobileCategories[randomIndex];
       }
       console.log("Ausgewählte Kategorie:", randomCategory);
-      // Aktualisiere die getrennten Boxen:
+      // Aktualisiere die getrennten Boxen: Songinfos und Kategorie
       updateTrackDetails(randomItem.track, randomItem.added_by);
       updateCategoryDisplay(randomCategory);
       await spotifySDKReady;
