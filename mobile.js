@@ -5,7 +5,7 @@ let mobileCategories = [];
 let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
-let firstRound = true;  // Beim allerersten Song bleibt Spieler 1 aktiv
+let firstRound = true; // Beim allerersten Song bleibt Spieler 1 aktiv
 
 // Hilfsfunktionen
 function extractPlaylistId(url) {
@@ -20,28 +20,22 @@ function getStoredPlaylistUrl() {
 
 function loadCategories() {
   const catStr = localStorage.getItem('mobileCategories');
-  if (catStr) {
-    try {
-      return JSON.parse(catStr);
-    } catch (e) {
-      console.error("Error parsing categories:", e);
-      return [];
-    }
+  try {
+    return catStr ? JSON.parse(catStr) : [];
+  } catch (e) {
+    console.error("Error parsing categories:", e);
+    return [];
   }
-  return [];
 }
 
 function loadPlayers() {
   const playersStr = localStorage.getItem('mobilePlayers');
-  if (playersStr) {
-    try {
-      return JSON.parse(playersStr);
-    } catch (e) {
-      console.error("Error parsing players:", e);
-      return [];
-    }
+  try {
+    return playersStr ? JSON.parse(playersStr) : [];
+  } catch (e) {
+    console.error("Error parsing players:", e);
+    return [];
   }
-  return [];
 }
 
 function loadCurrentPlayerIndex() {
@@ -257,7 +251,7 @@ let spotifySDKReady = new Promise((resolve) => {
         try {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
-            body: JSON.stringify({}), // Leerer Body
+            body: JSON.stringify({}),
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -304,7 +298,7 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// DOMContentLoaded-Block für Event Listener
+// DOMContentLoaded-Block für alle Event Listener
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
@@ -346,33 +340,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlist laden
   loadPlaylist();
   
-  // Initialer Zustand:
-  // Start-Button sichtbar, Steuerungsbereich ausgeblendet.
+  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich und Score, Kategorie & Spieleranzeige ausgeblendet
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
   const wrongButton = document.getElementById('wrong-button');
   const playButton = document.getElementById('play-button');
-  if (startButton && controlButtons && correctButton && wrongButton && playButton) {
+  const scoreboardBtn = document.getElementById('scoreboard-btn');
+  if (startButton && controlButtons && correctButton && wrongButton && playButton && scoreboardBtn) {
     startButton.style.display = 'block';
     controlButtons.style.display = 'none';
-    // Bewertungsbuttons sollen zu Beginn aktiv sein
     correctButton.disabled = false;
     wrongButton.disabled = false;
     playButton.disabled = false;
     document.getElementById('score-display').style.display = 'none';
     document.getElementById('category-heading').style.display = 'none';
     document.getElementById('player-turn').style.display = 'none';
+    scoreboardBtn.style.display = 'none';
   }
   
-  // Event Listener für den Start-Button
+  // Event Listener: Start-Button
   startButton.addEventListener('click', async () => {
-    // Blende den Start-Button aus und zeige den Steuerungsbereich sowie Score & Info
     startButton.style.display = 'none';
     controlButtons.style.display = 'block';
     document.getElementById('score-display').style.display = 'block';
     document.getElementById('category-heading').style.display = 'block';
     document.getElementById('player-turn').style.display = 'block';
+    scoreboardBtn.style.display = 'flex';
     // Starte den ersten Song für Spieler 1:
     if (!cachedPlaylistTracks) {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
@@ -401,16 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!success) {
       M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
     }
-    // Beim ersten Song bleibt currentPlayerIndex = 0
-    firstRound = false;
+    firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    // Nach Songstart: "Nächster Song" deaktivieren
     playButton.disabled = true;
   });
   
-  // Event Listener für den "Nächster Song"-Button
+  // Event Listener: "Nächster Song"-Button
   playButton.addEventListener('click', async () => {
     if (!cachedPlaylistTracks) {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
@@ -448,8 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.disabled = true;
   });
   
-  // Bewertungsbuttons: Beim Klick wird automatisch stopPlayback() aufgerufen,
-  // danach wird der "Nächster Song"-Button aktiviert.
+  // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach wird "Nächster Song" aktiviert
   const correctBtn = document.getElementById('correct-button');
   correctBtn.addEventListener('click', async () => {
     if (window.stopPlayback) await window.stopPlayback();
@@ -462,7 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerScores[currentPlayerIndex] >= winningScore) {
       showGameOverOverlay();
     }
-    // Nach Bewertung: "Nächster Song" aktivieren
     playButton.disabled = false;
   });
   
@@ -475,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Scoreboard-Overlay: Beim Klick auf den Button oben links öffnen
-  const scoreboardBtn = document.getElementById('scoreboard-btn');
   const scoreOverlay = document.getElementById('score-overlay');
   const closeScoreOverlay = document.getElementById('close-score-overlay');
   if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
