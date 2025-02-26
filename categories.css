@@ -23,7 +23,12 @@ body {
       margin-bottom: 10px;
     }
 
-      /* Overlay-Style für Anleitung2 */
+    .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }   
+       /* Overlay-Style für Anleitung2 */
       #anleitung2-overlay {
         position: fixed;
         top: 0;
