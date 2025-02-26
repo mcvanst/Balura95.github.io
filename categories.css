@@ -1,0 +1,23 @@
+body {
+      overflow-y: auto;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .input-field {
+      margin-bottom: 10px;
+    }
+    .fade-in {
+      animation: fadeIn 1s ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 10px;
