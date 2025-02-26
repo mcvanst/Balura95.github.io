@@ -145,3 +145,10 @@ window.onload = () => {
 
 // Alle 30 Minuten den Access Token erneuern
 setInterval(refreshToken, 30 * 60 * 1000);
+
+function setViewportHeight() {
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+setViewportHeight();
+window.addEventListener('resize', setViewportHeight);
