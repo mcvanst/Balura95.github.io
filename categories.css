@@ -21,3 +21,34 @@ body {
       gap: 10px;
       justify-content: center;
       margin-bottom: 10px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+      /* Overlay-Style für Anleitung2 */
+      #anleitung2-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 1000;
+        padding: 20px;
+      }
+      #anleitung2-overlay .modal-content {
+        text-align: left;
+        max-width: 600px;
+      }
+      #anleitung2-overlay .modal-footer {
+        margin-top: 20px;
+      }
