@@ -1,6 +1,6 @@
     body {
       font-family: 'Roboto', sans-serif;
-      margin: 0;
+      margin: 50px;
       padding: 0;
       background: linear-gradient(135deg, #e0eafc, #cfdef3);
       min-height: 100vh;
@@ -161,4 +161,8 @@
       bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
+    }
+
+    .start {
+        justify-content: center;
     }
