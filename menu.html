@@ -32,6 +32,13 @@
     if (!localStorage.getItem('access_token')) {
       window.location.href = 'index.html';
     }
+    function setViewportHeight() {
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+  setViewportHeight();
+  window.addEventListener('resize', setViewportHeight);
+
   </script>
 </body>
 </html>
