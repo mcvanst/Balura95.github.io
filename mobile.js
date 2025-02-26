@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('categories-container');
     const div = document.createElement('div');
     div.className = 'input-field';
-    div.innerHTML = '<input class="category-input" type="text"><label>Kategorie eintragen</label>';
+    div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
     container.appendChild(div);
   });
   
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('players-container');
     const div = document.createElement('div');
     div.className = 'input-field';
-    div.innerHTML = '<input class="player-input" type="text" value=""><label>Mitspieler</label>';
+    div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
     container.appendChild(div);
   });
   
