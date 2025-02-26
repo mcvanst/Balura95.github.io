@@ -6,6 +6,7 @@ body {
   /* Leichter, spannender Farbverlauf – nicht zu kräftig */
   background: linear-gradient(135deg, #e0eafc, #cfdef3);
  /*  min-height: 100vh;  statt height: 100vh, damit der Body wachsen und scrollen kann */
+  height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
