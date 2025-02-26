@@ -23,12 +23,6 @@ body {
       margin-bottom: 10px;
     }
 
-    .button-group {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-bottom: 10px;
-      }
       /* Overlay-Style für Anleitung2 */
       #anleitung2-overlay {
         position: fixed;
