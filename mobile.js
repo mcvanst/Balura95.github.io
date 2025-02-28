@@ -132,7 +132,7 @@ async function loadPlaylist() {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
   } else {
-    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
+    M.toast({ html: "Bitte Playlist eintragen", classes: "rounded", displayLength: 2000 });
   }
 }
 
