@@ -363,6 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('score-display').style.display = 'block';
     document.getElementById('category-heading').style.display = 'block';
     document.getElementById('player-turn').style.display = 'block';
+    document.getElementById('correct-button').style.display = 'block';
+    document.getElementById('wrong-button').style.display = 'block';
     scoreboardBtn.style.display = 'flex';
     // Starte den ersten Song für Spieler 1:
     if (!cachedPlaylistTracks) {
