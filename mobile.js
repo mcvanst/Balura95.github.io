@@ -60,7 +60,7 @@ function updateScoreDisplay() {
 function updatePlayerDisplay(playerName) {
   const playerTurn = document.getElementById('player-turn');
   if (playerTurn) {
-    playerTurn.textContent = "Spieler: " + playerName;
+    playerTurn.textContent = playerName + ", du bist dran!";
     playerTurn.style.display = 'block';
   }
 }
