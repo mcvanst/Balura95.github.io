@@ -126,10 +126,7 @@ async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
-  if (!playlistId) {
-    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
-    return;
-  }
+
   const tracks = await fetchPlaylistTracks(playlistId);
   if (tracks && tracks.length > 0) {
     M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
