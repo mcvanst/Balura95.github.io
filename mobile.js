@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const randomItem = getRandomTrack(cachedPlaylistTracks);
     console.log("Random Item:", randomItem);
     if (!randomItem || !randomItem.track) {
-      M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
+      M.toast({ html: "Kein Song gefunden", classes: "rounded", displayLength: 2000 });
       return;
     }
     selectedTrackUri = randomItem.track.uri;
