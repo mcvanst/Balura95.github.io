@@ -635,3 +635,27 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'mobil.html';
   });
 });
+
+async function checkSpotifySessionValidity() {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.status === 401) {
+      // Session ist abgelaufen
+      window.location.href = 'index.html';
+    }
+  } catch (error) {
+    console.error("Fehler beim Überprüfen der Spotify-Session:", error);
+    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
+  }
+}
+
+window.onload = () => {
+  checkSpotifySessionValidity();
+};
