@@ -149,7 +149,7 @@ function updateTrackDetails(track, addedBy) {
     if (title.includes("-")) {
       title = title.split("-")[0].trim();
     }
-    detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
+    detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
     detailsContainer.style.display = 'block';
     let expanded = false;
     detailsContainer.onclick = function() {
@@ -163,7 +163,7 @@ function updateTrackDetails(track, addedBy) {
         detailsContainer.innerHTML = fullDetails;
         expanded = true;
       } else {
-        detailsContainer.innerHTML = `<p id="track-info">Songinfos</p>`;
+        detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
         expanded = false;
       }
     };
