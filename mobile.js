@@ -441,11 +441,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!firstRound) {
       currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
     }
+    // Entferne den abgespielten Song aus dem Cache
+    cachedPlaylistTracks = cachedPlaylistTracks.filter(item => item.track.uri !== selectedTrackUri);
+    
+    // Überprüfe, ob der Cache jetzt leer ist
+    if (cachedPlaylistTracks.length === 0) {
+      M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
+    }
+    
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
     playButton.disabled = true;
   });
+  
+  
   
   // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach "Nächster Song" aktivieren
   const correctBtn = document.getElementById('correct-button');
