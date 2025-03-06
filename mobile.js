@@ -128,12 +128,6 @@ async function loadPlaylist() {
   const playlistId = extractPlaylistId(playlistUrl);
 
   const tracks = await fetchPlaylistTracks(playlistId);
-  if (tracks && tracks.length > 0) {
-    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
-    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-  } else {
-    M.toast({ html: "Bitte Playlist eintragen", classes: "rounded", displayLength: 2000 });
-  }
 }
 
 function getRandomTrack(tracks) {
