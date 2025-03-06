@@ -136,17 +136,40 @@ async function refreshToken() {
 
 // Beim Seitenaufruf: Versuche, den Code gegen einen Token auszutauschen.
 // Falls bereits ein Access Token vorhanden ist, leite sofort zur menu.html weiter.
-window.onload = () => {
-  // Falls in der URL ein Authorization-Code vorhanden ist, tausche ihn gegen einen Token aus
+window.onload = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
+  const accessToken = localStorage.getItem('access_token');
+
   if (code) {
-    getToken(code);
-  } else if (localStorage.getItem('access_token')) {
-    // Falls bereits ein Token vorhanden ist, leite zur menu.html weiter
-    window.location.href = 'menu.html';
+      // Falls Code vorhanden, versuche den Token zu erhalten
+      await getToken(code);
+  } else if (accessToken) {
+      // Falls ein Token existiert, prüfe, ob er gültig ist
+      const isValid = await checkSpotifyTokenValidity(accessToken);
+      if (isValid) {
+          window.location.href = 'menu.html';
+      } else {
+          localStorage.removeItem('access_token'); // Lösche ungültigen Token
+          localStorage.removeItem('refresh_token');
+          M.toast({ html: "Session abgelaufen. Bitte melde dich erneut an.", classes: "rounded red" });
+      }
   }
 };
+
+// Funktion zur Überprüfung, ob der gespeicherte Token noch gültig ist
+async function checkSpotifyTokenValidity(token) {
+  try {
+      const response = await fetch('https://api.spotify.com/v1/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return response.status !== 401; // Falls Status 401 (Unauthorized), ist der Token ungültig
+  } catch (error) {
+      console.error("Fehler beim Überprüfen des Tokens:", error);
+      return false;
+  }
+}
+
 
 
 // Alle 30 Minuten den Access Token erneuern
