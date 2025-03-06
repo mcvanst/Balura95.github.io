@@ -22,45 +22,54 @@
         <a href="player.html" class="btn-large waves-effect waves-light blue" style="margin:10px;">Shitster Kartenspiel</a>
         <a href="categories1.html" class="btn-large waves-effect waves-light green" style="margin:10px;">Shitster Mobile</a>
       </div>
+      <!-- Optionaler Button, der erscheint, wenn kein Access Token vorhanden ist -->
+      <div id="login-option" style="display:none; margin-top:20px;">
+         <button id="back-to-login" class="btn-large waves-effect waves-light red">Zurück zur Anmeldung</button>
+      </div>
     </div>
   </div>
   
   <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
-    // Prüfe, ob ein Access Token vorhanden ist – falls nicht, zur Login-Seite umleiten
-    if (!localStorage.getItem('access_token')) {
-      window.location.href = 'index.html';
-    }
+    // Setze die Viewport-Höhe als CSS-Variable, falls benötigt
     function setViewportHeight() {
-  let vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', `${vh}px`);
-  }
-  setViewportHeight();
-  window.addEventListener('resize', setViewportHeight);
-  async function checkSpotifySessionValidity() {
-  const token = localStorage.getItem('access_token');
-  if (!token) {
-    window.location.href = 'index.html';
-    return;
-  }
-  try {
-    const response = await fetch('https://api.spotify.com/v1/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (response.status === 401) {
-      // Session ist abgelaufen
-      window.location.href = 'index.html';
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
-  } catch (error) {
-    console.error("Fehler beim Überprüfen der Spotify-Session:", error);
-    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
-  }
-  }
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
 
-  window.onload = () => {
-  checkSpotifySessionValidity();
-  };
+    async function checkSpotifySessionValidity() {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        M.toast({ html: "Du bist nicht eingeloggt.", classes: "rounded", displayLength: 3000 });
+        document.getElementById('login-option').style.display = 'block';
+        return;
+      }
+      try {
+        const response = await fetch('https://api.spotify.com/v1/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.status === 401) {
+          M.toast({ html: "Session abgelaufen. Bitte melde dich erneut an.", classes: "rounded", displayLength: 3000 });
+          document.getElementById('login-option').style.display = 'block';
+        }
+      } catch (error) {
+        console.error("Fehler beim Überprüfen der Spotify-Session:", error);
+      }
+    }
+
+    window.onload = () => {
+      checkSpotifySessionValidity();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const backButton = document.getElementById('back-to-login');
+      backButton.addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    });
   </script>
 </body>
 </html>
