@@ -137,11 +137,17 @@ async function refreshToken() {
 // Beim Seitenaufruf: Versuche, den Code gegen einen Token auszutauschen.
 // Falls bereits ein Access Token vorhanden ist, leite sofort zur menu.html weiter.
 window.onload = () => {
-  getToken();
-  if (localStorage.getItem('access_token')) {
+  // Falls in der URL ein Authorization-Code vorhanden ist, tausche ihn gegen einen Token aus
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (code) {
+    getToken(code);
+  } else if (localStorage.getItem('access_token')) {
+    // Falls bereits ein Token vorhanden ist, leite zur menu.html weiter
     window.location.href = 'menu.html';
   }
 };
+
 
 // Alle 30 Minuten den Access Token erneuern
 setInterval(refreshToken, 30 * 60 * 1000);
