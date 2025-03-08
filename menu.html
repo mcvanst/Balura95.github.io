@@ -41,28 +41,28 @@
     window.addEventListener('resize', setViewportHeight);
 
     async function checkSpotifySessionValidity() {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        M.toast({ html: "Du bist nicht eingeloggt.", classes: "rounded", displayLength: 3000 });
-        document.getElementById('login-option').style.display = 'block';
-        return;
-      }
-      try {
-        const response = await fetch('https://api.spotify.com/v1/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.status === 401) {
-          M.toast({ html: "Session abgelaufen. Bitte melde dich erneut an.", classes: "rounded", displayLength: 3000 });
-          document.getElementById('login-option').style.display = 'block';
-        }
-      } catch (error) {
-        console.error("Fehler beim Überprüfen der Spotify-Session:", error);
-      }
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.status === 401) {
+      // Session ist abgelaufen
+      window.location.href = 'index.html';
     }
+  } catch (error) {
+    console.error("Fehler beim Überprüfen der Spotify-Session:", error);
+    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
+  }
+}
 
-    window.onload = () => {
-      checkSpotifySessionValidity();
-    };
+window.onload = () => {
+  checkSpotifySessionValidity();
+};
 
     document.addEventListener('DOMContentLoaded', () => {
       const backButton = document.getElementById('back-to-login');
