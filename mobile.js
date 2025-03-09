@@ -1,4 +1,6 @@
-// Globale Variablen
+/* mobile.js */
+
+// === Globale Variablen ===
 let cachedPlaylistTracks = null;
 let selectedTrackUri = null;
 let mobileCategories = [];
@@ -6,8 +8,9 @@ let mobilePlayers = [];
 let currentPlayerIndex = 0;
 let playerScores = [];
 let firstRound = true; // Beim allerersten Song bleibt Spieler 1 aktiv
+let playedTrackUris = []; // Hier werden die bereits abgespielten Song-URIs gespeichert
 
-// Hilfsfunktionen
+// === Hilfsfunktionen ===
 function extractPlaylistId(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
@@ -101,21 +104,28 @@ function getWinningScore() {
 
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
-  const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
+  let allTracks = [];
+  let limit = 50;  // Wir laden 50 Songs pro Anfrage
+  let offset = 0;
+  let total = 0;
   try {
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    console.log("Playlist data received:", data);
-    if (data && data.items) {
-      console.log("Anzahl geladener Tracks:", data.items.length);
-      cachedPlaylistTracks = data.items;
-      return cachedPlaylistTracks;
-    } else {
-      console.error("Keine Tracks gefunden:", data);
-      return [];
-    }
+    do {
+      const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
+      const response = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data && data.items) {
+        allTracks = allTracks.concat(data.items);
+        total = data.total; // Gesamtzahl der Songs in der Playlist
+        offset += limit;
+      } else {
+        console.error("Keine Tracks gefunden:", data);
+        break;
+      }
+    } while (allTracks.length < total);
+    console.log("Total loaded tracks:", allTracks.length);
+    return allTracks;
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);
     return null;
@@ -126,14 +136,30 @@ async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
-
-  const tracks = await fetchPlaylistTracks(playlistId);
+  if (!playlistId) {
+    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
+    return;
+  }
+  cachedPlaylistTracks = await fetchPlaylistTracks(playlistId);
+  if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
+  } else {
+    M.toast({ html: `${cachedPlaylistTracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
+    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
+  }
 }
 
+
+// Wählt einen zufälligen Song aus, der noch nicht abgespielt wurde.
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * tracks.length);
-  return tracks[randomIndex];
+  const availableTracks = tracks.filter(item => !playedTrackUris.includes(item.track.uri));
+  if (availableTracks.length === 0) {
+    M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
+    return null;
+  }
+  const randomIndex = Math.floor(Math.random() * availableTracks.length);
+  return availableTracks[randomIndex];
 }
 
 function updateTrackDetails(track, addedBy) {
@@ -171,7 +197,8 @@ function updateCategoryDisplay(category) {
   }
 }
 
-// Spotify Web Playback SDK Setup – nur eine einzige Deklaration von spotifySDKReady
+// === Spotify Web Playback SDK Setup ===
+// Hier wird spotifySDKReady einmal deklariert und genutzt.
 let spotifySDKReady = new Promise((resolve) => {
   window.onSpotifyWebPlaybackSDKReady = () => {
     const token = localStorage.getItem('access_token');
@@ -242,7 +269,7 @@ let spotifySDKReady = new Promise((resolve) => {
         try {
           let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
             method: 'PUT',
-            body: JSON.stringify({}), // Leerer Body
+            body: JSON.stringify({}),
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -289,295 +316,330 @@ let spotifySDKReady = new Promise((resolve) => {
   };
 });
 
-// DOMContentLoaded-Block für alle Event Listener
+// === DOMContentLoaded – Event Listener für alle Seiten spezifische Logik ===
 document.addEventListener('DOMContentLoaded', () => {
+  // Falls kein Access Token vorhanden, umleiten
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
   }
-  
-  // Lade gespeicherte Kategorien und Mitspieler
-  mobileCategories = loadCategories();
-  mobilePlayers = loadPlayers();
-  console.log("Geladene Kategorien:", mobileCategories);
-  console.log("Geladene Mitspieler:", mobilePlayers);
-  
-  // Initialisiere playerScores, falls noch nicht vorhanden
-  if (!localStorage.getItem('playerScores')) {
-    playerScores = new Array(mobilePlayers.length).fill(0);
-    localStorage.setItem('playerScores', JSON.stringify(playerScores));
-  } else {
-    try {
-      playerScores = JSON.parse(localStorage.getItem('playerScores'));
-    } catch (e) {
+
+  // --- Mobile Spiel (mobil.html) ---
+  if (document.getElementById('start-button')) {
+    // Lade gespeicherte Kategorien und Mitspieler
+    mobileCategories = loadCategories();
+    mobilePlayers = loadPlayers();
+    console.log("Geladene Kategorien:", mobileCategories);
+    console.log("Geladene Mitspieler:", mobilePlayers);
+
+    // Initialisiere playerScores, falls noch nicht vorhanden
+    if (!localStorage.getItem('playerScores')) {
       playerScores = new Array(mobilePlayers.length).fill(0);
-    }
-  }
-  
-  // Lade aktuellen Spieler-Index
-  currentPlayerIndex = loadCurrentPlayerIndex();
-  updateScoreDisplay();
-  updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-  
-  // Aktiviere AudioContext (iOS)
-  document.addEventListener('touchstart', function resumeAudioContext() {
-    if (window.AudioContext || window.webkitAudioContext) {
-      const context = new (window.AudioContext || window.webkitAudioContext)();
-      context.resume();
-    }
-    document.removeEventListener('touchstart', resumeAudioContext);
-  });
-  
-  // Playlist laden
-  loadPlaylist();
-  
-  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
-  const startButton = document.getElementById('start-button');
-  const controlButtons = document.getElementById('control-buttons');
-  const correctButton = document.getElementById('correct-button');
-  const wrongButton = document.getElementById('wrong-button');
-  const playButton = document.getElementById('play-button');
-  const scoreboardBtn = document.getElementById('scoreboard-btn');
-  if (startButton && controlButtons && correctButton && wrongButton && playButton && scoreboardBtn) {
-    startButton.style.display = 'block';
-    controlButtons.style.display = 'none';
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    playButton.disabled = false;
-    document.getElementById('score-display').style.display = 'none';
-    document.getElementById('category-heading').style.display = 'none';
-    document.getElementById('player-turn').style.display = 'none';
-    scoreboardBtn.style.display = 'none';
-  }
-  
-  // Event Listener: Start-Button
-  startButton.addEventListener('click', async () => {
-    startButton.style.display = 'none';
-    controlButtons.style.display = 'block';
-    document.getElementById('score-display').style.display = 'block';
-    document.getElementById('category-heading').style.display = 'block';
-    document.getElementById('player-turn').style.display = 'block';
-    document.getElementById('correct-button').style.display = 'block';
-    document.getElementById('wrong-button').style.display = 'block';
-    scoreboardBtn.style.display = 'flex';
-    // Starte den ersten Song für Spieler 1:
-    if (!cachedPlaylistTracks) {
-      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    const randomItem = getRandomTrack(cachedPlaylistTracks);
-    console.log("Random Item:", randomItem);
-    if (!randomItem || !randomItem.track) {
-      M.toast({ html: "Kein Song gefunden", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    selectedTrackUri = randomItem.track.uri;
-    console.log("Ausgewählte Track URI:", selectedTrackUri);
-    let randomCategory = "";
-    if (mobileCategories && mobileCategories.length > 0) {
-      const randomIndex = Math.floor(Math.random() * mobileCategories.length);
-      randomCategory = mobileCategories[randomIndex];
-    }
-    console.log("Ausgewählte Kategorie:", randomCategory);
-    updateCategoryDisplay(randomCategory);
-    updateTrackDetails(randomItem.track, randomItem.added_by);
-    await spotifySDKReady;
-    // iOS: activateElement auf dem Startbutton (der Klick zählt bereits als User-Interaktion)
-    if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
-      window.mobilePlayer.activateElement(document.getElementById('start-button'));
-    }
-    const success = await window.playTrack(selectedTrackUri);
-    if (!success) {
-      M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
-    }
-    firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
-    saveCurrentPlayerIndex(currentPlayerIndex);
-    updateScoreDisplay();
-    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    playButton.disabled = true;
-  });
-  
-  // Event Listener: "Nächster Song"-Button
-  playButton.addEventListener('click', async () => {
-    if (!cachedPlaylistTracks) {
-      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    const randomItem = getRandomTrack(cachedPlaylistTracks);
-    console.log("Random Item:", randomItem);
-    if (!randomItem || !randomItem.track) {
-      M.toast({ html: "Fehler beim Abrufen des Songs", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    selectedTrackUri = randomItem.track.uri;
-    console.log("Ausgewählte Track URI:", selectedTrackUri);
-    let randomCategory = "";
-    if (mobileCategories && mobileCategories.length > 0) {
-      const randomIndex = Math.floor(Math.random() * mobileCategories.length);
-      randomCategory = mobileCategories[randomIndex];
-    }
-    console.log("Ausgewählte Kategorie:", randomCategory);
-    updateCategoryDisplay(randomCategory);
-    updateTrackDetails(randomItem.track, randomItem.added_by);
-    await spotifySDKReady;
-    // iOS: activateElement auf dem "Nächster Song"-Button
-    if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
-      window.mobilePlayer.activateElement(document.getElementById('play-button'));
-    }
-    const success = await window.playTrack(selectedTrackUri);
-    if (!success) {
-      M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
-    }
-    if (!firstRound) {
-      currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
-    }
-    // Entferne den abgespielten Song aus dem Cache
-    cachedPlaylistTracks = cachedPlaylistTracks.filter(item => item.track.uri !== selectedTrackUri);
-    
-    // Überprüfe, ob der Cache jetzt leer ist
-    if (cachedPlaylistTracks.length === 0) {
-      M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
-    }
-    
-    saveCurrentPlayerIndex(currentPlayerIndex);
-    updateScoreDisplay();
-    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    playButton.disabled = true;
-  });
-  
-  
-  
-  // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach "Nächster Song" aktivieren
-  const correctBtn = document.getElementById('correct-button');
-  correctBtn.addEventListener('click', async () => {
-    if (window.stopPlayback) await window.stopPlayback();
-    correctBtn.disabled = true;
-    wrongButton.disabled = true;
-    playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
-    localStorage.setItem('playerScores', JSON.stringify(playerScores));
-    updateScoreDisplay();
-    const winningScore = getWinningScore();
-    if (playerScores[currentPlayerIndex] >= winningScore) {
-      showGameOverOverlay();
-    }
-    playButton.disabled = false;
-  });
-  
-  const wrongBtn = document.getElementById('wrong-button');
-  wrongBtn.addEventListener('click', async () => {
-    if (window.stopPlayback) await window.stopPlayback();
-    correctBtn.disabled = true;
-    wrongBtn.disabled = true;
-    playButton.disabled = false;
-  });
-  
-  // Scoreboard-Overlay: Öffne bei Klick auf den Scoreboard-Button
-  const scoreOverlay = document.getElementById('score-overlay');
-  const closeScoreOverlay = document.getElementById('close-score-overlay');
-  if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
-    scoreboardBtn.addEventListener('click', () => {
-      const tableBody = document.querySelector('#scoreboard-table tbody');
-      tableBody.innerHTML = "";
-      for (let i = 0; i < mobilePlayers.length; i++) {
-        const row = document.createElement('tr');
-        const playerCell = document.createElement('td');
-        playerCell.textContent = mobilePlayers[i];
-        const scoreCell = document.createElement('td');
-        scoreCell.textContent = playerScores[i] || 0;
-        row.appendChild(playerCell);
-        row.appendChild(scoreCell);
-        tableBody.appendChild(row);
+      localStorage.setItem('playerScores', JSON.stringify(playerScores));
+    } else {
+      try {
+        playerScores = JSON.parse(localStorage.getItem('playerScores'));
+      } catch (e) {
+        playerScores = new Array(mobilePlayers.length).fill(0);
       }
-      scoreOverlay.style.display = 'flex';
+    }
+
+    // Lade aktuellen Spieler-Index
+    currentPlayerIndex = loadCurrentPlayerIndex();
+    updateScoreDisplay();
+    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+
+    // Aktiviere AudioContext (iOS)
+    document.addEventListener('touchstart', function resumeAudioContext() {
+      if (window.AudioContext || window.webkitAudioContext) {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        context.resume();
+      }
+      document.removeEventListener('touchstart', resumeAudioContext);
+    });
+
+    // Playlist laden
+    loadPlaylist();
+
+    // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet
+    const startButton = document.getElementById('start-button');
+    const controlButtons = document.getElementById('control-buttons');
+    const correctButton = document.getElementById('correct-button');
+    const wrongButton = document.getElementById('wrong-button');
+    const playButton = document.getElementById('play-button');
+    const scoreboardBtn = document.getElementById('scoreboard-btn');
+    if (startButton && controlButtons && correctButton && wrongButton && playButton && scoreboardBtn) {
+      startButton.style.display = 'block';
+      controlButtons.style.display = 'none';
+      correctButton.disabled = false;
+      wrongButton.disabled = false;
+      playButton.disabled = false;
+      document.getElementById('score-display').style.display = 'none';
+      document.getElementById('category-heading').style.display = 'none';
+      document.getElementById('player-turn').style.display = 'none';
+      scoreboardBtn.style.display = 'none';
+    }
+
+    // Event Listener: Start-Button
+    startButton.addEventListener('click', async () => {
+      startButton.style.display = 'none';
+      controlButtons.style.display = 'block';
+      document.getElementById('score-display').style.display = 'block';
+      document.getElementById('category-heading').style.display = 'block';
+      document.getElementById('player-turn').style.display = 'block';
+      scoreboardBtn.style.display = 'flex';
+      // Starte den ersten Song für Spieler 1:
+      if (!cachedPlaylistTracks) {
+        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      correctButton.disabled = false;
+      wrongButton.disabled = false;
+      const randomItem = getRandomTrack(cachedPlaylistTracks);
+      if (!randomItem || !randomItem.track) {
+        M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
+        return;
+      }
+      selectedTrackUri = randomItem.track.uri;
+      playedTrackUris.push(selectedTrackUri);
+      let randomCategory = "";
+      if (mobileCategories && mobileCategories.length > 0) {
+        const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+        randomCategory = mobileCategories[randomIndex];
+      }
+      updateCategoryDisplay(randomCategory);
+      updateTrackDetails(randomItem.track, randomItem.added_by);
+      await spotifySDKReady;
+      // iOS: activateElement auf dem Startbutton (der Klick zählt bereits als User-Interaktion)
+      if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
+        window.mobilePlayer.activateElement(document.getElementById('start-button'));
+      }
+      const success = await window.playTrack(selectedTrackUri);
+      if (!success) {
+        M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+      }
+      firstRound = false;
+      saveCurrentPlayerIndex(currentPlayerIndex);
+      updateScoreDisplay();
+      updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+      playButton.disabled = true;
+    });
+
+    // Event Listener: "Nächster Song"-Button
+    playButton.addEventListener('click', async () => {
+      if (!cachedPlaylistTracks) {
+        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      correctButton.disabled = false;
+      wrongButton.disabled = false;
+      const randomItem = getRandomTrack(cachedPlaylistTracks);
+      if (!randomItem || !randomItem.track) {
+        M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
+        return;
+      }
+      selectedTrackUri = randomItem.track.uri;
+      playedTrackUris.push(selectedTrackUri);
+      let randomCategory = "";
+      if (mobileCategories && mobileCategories.length > 0) {
+        const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+        randomCategory = mobileCategories[randomIndex];
+      }
+      updateCategoryDisplay(randomCategory);
+      updateTrackDetails(randomItem.track, randomItem.added_by);
+      await spotifySDKReady;
+      // iOS: activateElement auf dem "Nächster Song"-Button
+      if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
+        window.mobilePlayer.activateElement(document.getElementById('play-button'));
+      }
+      const success = await window.playTrack(selectedTrackUri);
+      if (!success) {
+        M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+      }
+      if (!firstRound) {
+        currentPlayerIndex = (currentPlayerIndex + 1) % mobilePlayers.length;
+      }
+      // Entferne den abgespielten Song aus dem Cache
+      cachedPlaylistTracks = cachedPlaylistTracks.filter(item => item.track.uri !== selectedTrackUri);
+      if (cachedPlaylistTracks.length === 0) {
+        M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
+      }
+      saveCurrentPlayerIndex(currentPlayerIndex);
+      updateScoreDisplay();
+      updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+      playButton.disabled = true;
+    });
+
+    // Event Listener: Bewertungsbuttons – stopPlayback wird aufgerufen, danach "Nächster Song" aktivieren
+    const correctBtn = document.getElementById('correct-button');
+    correctBtn.addEventListener('click', async () => {
+      if (window.stopPlayback) await window.stopPlayback();
+      correctBtn.disabled = true;
+      wrongButton.disabled = true;
+      playerScores[currentPlayerIndex] = (playerScores[currentPlayerIndex] || 0) + 1;
+      localStorage.setItem('playerScores', JSON.stringify(playerScores));
+      updateScoreDisplay();
+      const winningScore = getWinningScore();
+      if (playerScores[currentPlayerIndex] >= winningScore) {
+        showGameOverOverlay();
+      }
+      playButton.disabled = false;
+    });
+
+    const wrongBtn = document.getElementById('wrong-button');
+    wrongBtn.addEventListener('click', async () => {
+      if (window.stopPlayback) await window.stopPlayback();
+      correctBtn.disabled = true;
+      wrongBtn.disabled = true;
+      playButton.disabled = false;
+    });
+
+    // Scoreboard-Overlay: Öffne bei Klick auf den Scoreboard-Button
+    const scoreboardBtn = document.getElementById('scoreboard-btn');
+    const scoreOverlay = document.getElementById('score-overlay');
+    const closeScoreOverlay = document.getElementById('close-score-overlay');
+    if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
+      scoreboardBtn.addEventListener('click', () => {
+        const tableBody = document.querySelector('#scoreboard-table tbody');
+        tableBody.innerHTML = "";
+        for (let i = 0; i < mobilePlayers.length; i++) {
+          const row = document.createElement('tr');
+          const playerCell = document.createElement('td');
+          playerCell.textContent = mobilePlayers[i];
+          const scoreCell = document.createElement('td');
+          scoreCell.textContent = playerScores[i] || 0;
+          row.appendChild(playerCell);
+          row.appendChild(scoreCell);
+          tableBody.appendChild(row);
+        }
+        scoreOverlay.style.display = 'flex';
+      });
+      
+      closeScoreOverlay.addEventListener('click', () => {
+        scoreOverlay.style.display = 'none';
+      });
+    }
+    
+    // Reset-Button
+    const resetButton = document.getElementById('reset-app');
+    resetButton.addEventListener('click', () => {
+      if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
+        logout();
+      }
     });
     
-    closeScoreOverlay.addEventListener('click', () => {
-      scoreOverlay.style.display = 'none';
+    // Overlay-Button (Spielende)
+    const overlayMenuBtn = document.getElementById('overlay-menu-btn');
+    overlayMenuBtn.addEventListener('click', () => {
+      window.location.href = 'menu.html';
     });
   }
   
-  // Reset-Button
-  const resetButton = document.getElementById('reset-app');
-  resetButton.addEventListener('click', () => {
-    if (confirm("Möchtest du die App wirklich zurücksetzen?")) {
-      logout();
-    }
-  });
-  
-  // Overlay-Button (Spielende)
-  const overlayMenuBtn = document.getElementById('overlay-menu-btn');
-  overlayMenuBtn.addEventListener('click', () => {
-    window.location.href = 'menu.html';
-  });
-});
-
-// Hilfsfunktion zur iOS-Erkennung
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-// Logout-Funktion
-function logout() {
-  localStorage.clear();
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-}
-document.addEventListener('DOMContentLoaded', () => {
-  // Kategorie hinzufügen: Neues Input-Feld ohne placeholder (Labels übernehmen die Anzeige)
-  document.getElementById('add-category').addEventListener('click', () => {
-    const container = document.getElementById('categories-container');
-    const div = document.createElement('div');
-    div.className = 'input-field';
-    div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
-    container.appendChild(div);
-  });
-  
-  // Kategorie entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
-  document.getElementById('remove-category').addEventListener('click', () => {
-    const container = document.getElementById('categories-container');
-    const fields = container.querySelectorAll('.input-field');
-    if (fields.length > 1) {
-      fields[fields.length - 1].remove();
-    }
-  });
-  
-  // Weiter-Button: Speichert Playlist-URL und Kategorien in localStorage und leitet zu categorie2.html weiter
-  document.getElementById('next-button').addEventListener('click', () => {
-    const playlistUrl = document.getElementById('playlist-url').value.trim();
-    if (!playlistUrl) {
-      M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('mobilePlaylistUrl', playlistUrl);
-    
-    const catInputs = document.querySelectorAll('.category-input');
-    let categories = [];
-    catInputs.forEach(input => {
-      const value = input.value.trim();
-      if (value) categories.push(value);
+  // --- Kategorien & Playlist in categorie1.html ---
+  if (document.getElementById('add-category')) {
+    document.getElementById('add-category').addEventListener('click', () => {
+      const container = document.getElementById('categories-container');
+      const div = document.createElement('div');
+      div.className = 'input-field';
+      div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
+      container.appendChild(div);
     });
-    // Kategorien sind optional – wenn leer, speichern wir einen leeren Array
-    localStorage.setItem('mobileCategories', JSON.stringify(categories));
     
-    window.location.href = 'categories2.html';
-  });
+    document.getElementById('remove-category').addEventListener('click', () => {
+      const container = document.getElementById('categories-container');
+      const fields = container.querySelectorAll('.input-field');
+      if (fields.length > 1) {
+        fields[fields.length - 1].remove();
+      }
+    });
+    
+    document.getElementById('next-button').addEventListener('click', () => {
+      const playlistUrl = document.getElementById('playlist-url').value.trim();
+      if (!playlistUrl) {
+        M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('mobilePlaylistUrl', playlistUrl);
+      
+      const catInputs = document.querySelectorAll('.category-input');
+      let categories = [];
+      catInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) categories.push(value);
+      });
+      localStorage.setItem('mobileCategories', JSON.stringify(categories));
+      
+      window.location.href = 'categories2.html';
+    });
+  }
   
-  // Anleitung2 Overlay-Logik
-  const anleitung2Btn = document.getElementById('anleitung2-button');
-  const anleitung2Overlay = document.getElementById('anleitung2-overlay');
-  const closeAnleitung2Btn = document.getElementById('close-anleitung2');
+  // --- Mitspieler in categorie2.html ---
+  if (document.getElementById('add-player')) {
+    document.getElementById('add-player').addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const div = document.createElement('div');
+      div.className = 'input-field';
+      div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
+      container.appendChild(div);
+    });
+  }
   
-  anleitung2Btn.addEventListener('click', () => {
-    anleitung2Overlay.style.display = 'flex';
-  });
+  if (document.getElementById('remove-player')) {
+    document.getElementById('remove-player').addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const fields = container.querySelectorAll('.input-field');
+      if (fields.length > 1) {
+        fields[fields.length - 1].remove();
+      }
+    });
+  }
   
-  closeAnleitung2Btn.addEventListener('click', () => {
-    anleitung2Overlay.style.display = 'none';
-  });
+  if (document.getElementById('confirm-button')) {
+    document.getElementById('confirm-button').addEventListener('click', () => {
+      const playerInputs = document.querySelectorAll('.player-input');
+      let players = [];
+      playerInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) players.push(value);
+      });
+      if (players.length === 0) {
+        M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('mobilePlayers', JSON.stringify(players));
+      
+      const winningScoreInput = document.getElementById('winning-score').value.trim();
+      const winningScore = parseInt(winningScoreInput, 10);
+      if (isNaN(winningScore) || winningScore < 1) {
+        M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('winningScore', winningScore.toString());
+      
+      localStorage.setItem('currentPlayerIndex', "0");
+      let playerScores = new Array(players.length).fill(0);
+      localStorage.setItem('playerScores', JSON.stringify(playerScores));
+      
+      console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
+      console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
+      window.location.href = 'mobil.html';
+    });
+  }
+  
+  // --- Anleitung2 Overlay in categorie1.html ---
+  if (document.getElementById('anleitung2-button')) {
+    const anleitung2Btn = document.getElementById('anleitung2-button');
+    const anleitung2Overlay = document.getElementById('anleitung2-overlay');
+    const closeAnleitung2Btn = document.getElementById('close-anleitung2');
+    
+    anleitung2Btn.addEventListener('click', () => {
+      anleitung2Overlay.style.display = 'flex';
+    });
+    
+    closeAnleitung2Btn.addEventListener('click', () => {
+      anleitung2Overlay.style.display = 'none';
+    });
+  }
 });
 
 function setViewportHeight() {
@@ -586,58 +648,6 @@ function setViewportHeight() {
 }
 setViewportHeight();
 window.addEventListener('resize', setViewportHeight);
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Mitspieler hinzufügen
-  document.getElementById('add-player').addEventListener('click', () => {
-    const container = document.getElementById('players-container');
-    const div = document.createElement('div');
-    div.className = 'input-field';
-    div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
-    container.appendChild(div);
-  });
-  
-  // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
-  document.getElementById('remove-player').addEventListener('click', () => {
-    const container = document.getElementById('players-container');
-    const fields = container.querySelectorAll('.input-field');
-    if (fields.length > 1) {
-      fields[fields.length - 1].remove();
-    }
-  });
-  
-  // Bestätigen-Button: Speichern der Mitspieler und Gewinnpunkte, dann Weiterleitung zu mobil.html
-  document.getElementById('confirm-button').addEventListener('click', () => {
-    const playerInputs = document.querySelectorAll('.player-input');
-    let players = [];
-    playerInputs.forEach(input => {
-      const value = input.value.trim();
-      if (value) players.push(value);
-    });
-    if (players.length === 0) {
-      M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('mobilePlayers', JSON.stringify(players));
-    
-    const winningScoreInput = document.getElementById('winning-score').value.trim();
-    const winningScore = parseInt(winningScoreInput, 10);
-    if (isNaN(winningScore) || winningScore < 1) {
-      M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('winningScore', winningScore.toString());
-    
-    // Initialisiere den aktuellen Spieler-Index und Scores
-    localStorage.setItem('currentPlayerIndex', "0");
-    let playerScores = new Array(players.length).fill(0);
-    localStorage.setItem('playerScores', JSON.stringify(playerScores));
-    
-    console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
-    console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
-    window.location.href = 'mobil.html';
-  });
-});
 
 async function checkSpotifySessionValidity() {
   const token = localStorage.getItem('access_token');
@@ -650,12 +660,10 @@ async function checkSpotifySessionValidity() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.status === 401) {
-      // Session ist abgelaufen
       window.location.href = 'index.html';
     }
   } catch (error) {
     console.error("Fehler beim Überprüfen der Spotify-Session:", error);
-    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
   }
 }
 
