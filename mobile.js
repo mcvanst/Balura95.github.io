@@ -101,37 +101,8 @@ function getWinningScore() {
 
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
-<<<<<<< HEAD
-<<<<<<< HEAD
-  let allTracks = [];
-  let limit = 50;
-  let offset = 0;
-  let total = 0;
-  try {
-    do {
-      const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
-      const response = await fetch(endpoint, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (data && data.items) {
-        allTracks = allTracks.concat(data.items);
-        total = data.total;
-        offset += limit;
-      } else {
-        console.error("Keine Tracks gefunden:", data);
-        break;
-      }
-    } while (allTracks.length < total);
-    console.log("Total loaded tracks:", allTracks.length);
-    return allTracks;
-=======
   const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
   try {
-=======
-  const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
-  try {
->>>>>>> parent of 3cd764b (Update mobile.js)
     const response = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -145,10 +116,6 @@ async function fetchPlaylistTracks(playlistId) {
       console.error("Keine Tracks gefunden:", data);
       return [];
     }
-<<<<<<< HEAD
->>>>>>> parent of 3cd764b (Update mobile.js)
-=======
->>>>>>> parent of 3cd764b (Update mobile.js)
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);
     return null;
@@ -159,37 +126,10 @@ async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
-<<<<<<< HEAD
-<<<<<<< HEAD
-  if (!playlistId) {
-    M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  const tracks = await fetchPlaylistTracks(playlistId);
-  if (tracks && tracks.length > 0) {
-    cachedPlaylistTracks = tracks;
-    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
-    console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
-  } else {
-    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
-  }
-}
-
-
-
-// Wählt einen zufälligen Song aus, der noch nicht abgespielt wurde.
-=======
 
   const tracks = await fetchPlaylistTracks(playlistId);
 }
 
->>>>>>> parent of 3cd764b (Update mobile.js)
-=======
-
-  const tracks = await fetchPlaylistTracks(playlistId);
-}
-
->>>>>>> parent of 3cd764b (Update mobile.js)
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * tracks.length);
