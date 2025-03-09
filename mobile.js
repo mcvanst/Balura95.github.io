@@ -102,6 +102,7 @@ function getWinningScore() {
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
 <<<<<<< HEAD
+<<<<<<< HEAD
   let allTracks = [];
   let limit = 50;
   let offset = 0;
@@ -127,6 +128,10 @@ async function fetchPlaylistTracks(playlistId) {
 =======
   const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
   try {
+=======
+  const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
+  try {
+>>>>>>> parent of 3cd764b (Update mobile.js)
     const response = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -140,6 +145,9 @@ async function fetchPlaylistTracks(playlistId) {
       console.error("Keine Tracks gefunden:", data);
       return [];
     }
+<<<<<<< HEAD
+>>>>>>> parent of 3cd764b (Update mobile.js)
+=======
 >>>>>>> parent of 3cd764b (Update mobile.js)
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);
@@ -151,6 +159,7 @@ async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (!playlistId) {
     M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
@@ -169,6 +178,12 @@ async function loadPlaylist() {
 
 
 // Wählt einen zufälligen Song aus, der noch nicht abgespielt wurde.
+=======
+
+  const tracks = await fetchPlaylistTracks(playlistId);
+}
+
+>>>>>>> parent of 3cd764b (Update mobile.js)
 =======
 
   const tracks = await fetchPlaylistTracks(playlistId);
