@@ -105,7 +105,7 @@ function getWinningScore() {
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
   let allTracks = [];
-  let limit = 50;  // Wir laden 50 Songs pro Anfrage
+  let limit = 50;
   let offset = 0;
   let total = 0;
   try {
@@ -117,7 +117,7 @@ async function fetchPlaylistTracks(playlistId) {
       const data = await response.json();
       if (data && data.items) {
         allTracks = allTracks.concat(data.items);
-        total = data.total; // Gesamtzahl der Songs in der Playlist
+        total = data.total;
         offset += limit;
       } else {
         console.error("Keine Tracks gefunden:", data);
@@ -140,14 +140,16 @@ async function loadPlaylist() {
     M.toast({ html: "Ungültige gespeicherte Playlist URL", classes: "rounded", displayLength: 2000 });
     return;
   }
-  cachedPlaylistTracks = await fetchPlaylistTracks(playlistId);
-  if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
-    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
-  } else {
-    M.toast({ html: `${cachedPlaylistTracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
+  const tracks = await fetchPlaylistTracks(playlistId);
+  if (tracks && tracks.length > 0) {
+    cachedPlaylistTracks = tracks;
+    M.toast({ html: `${tracks.length} Songs geladen`, classes: "rounded", displayLength: 2000 });
     console.log("Cached Playlist Tracks:", cachedPlaylistTracks);
+  } else {
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
 }
+
 
 
 // Wählt einen zufälligen Song aus, der noch nicht abgespielt wurde.
