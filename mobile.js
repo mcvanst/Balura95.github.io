@@ -366,83 +366,61 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  document.addEventListener('DOMContentLoaded', () => {
-    // Nur auf mobil.html die Playlist laden:
-    if (window.location.pathname.endsWith("mobil.html")) {
-      loadPlaylist();
-    }
-    
-    // ...restlicher Code, der in allen Seiten ausgeführt wird
-  });
+
   
-  
-  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
-  const startButton = document.getElementById('start-button');
-  const controlButtons = document.getElementById('control-buttons');
-  const correctButton = document.getElementById('correct-button');
-  const wrongButton = document.getElementById('wrong-button');
-  const playButton = document.getElementById('play-button');
-  const scoreboardBtn = document.getElementById('scoreboard-btn');
-  if (startButton && controlButtons && correctButton && wrongButton && playButton && scoreboardBtn) {
-    startButton.style.display = 'block';
-    controlButtons.style.display = 'none';
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    playButton.disabled = false;
-    document.getElementById('score-display').style.display = 'none';
-    document.getElementById('category-heading').style.display = 'none';
-    document.getElementById('player-turn').style.display = 'none';
-    scoreboardBtn.style.display = 'none';
+// Event Listener: Start-Button
+startButton.addEventListener('click', async () => {
+  // Verstecke den Start-Button und zeige den Steuerungsbereich an:
+  startButton.style.display = 'none';
+  controlButtons.style.display = 'block';
+  document.getElementById('score-display').style.display = 'block';
+  document.getElementById('category-heading').style.display = 'block';
+  document.getElementById('player-turn').style.display = 'block';
+  document.getElementById('correct-button').style.display = 'block';
+  document.getElementById('wrong-button').style.display = 'block';
+  scoreboardBtn.style.display = 'flex';
+
+  // Lade die Playlist erst jetzt:
+  await loadPlaylist();
+  if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
+    M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+    return;
   }
-  
-  // Event Listener: Start-Button
-  startButton.addEventListener('click', async () => {
-    startButton.style.display = 'none';
-    controlButtons.style.display = 'block';
-    document.getElementById('score-display').style.display = 'block';
-    document.getElementById('category-heading').style.display = 'block';
-    document.getElementById('player-turn').style.display = 'block';
-    document.getElementById('correct-button').style.display = 'block';
-    document.getElementById('wrong-button').style.display = 'block';
-    scoreboardBtn.style.display = 'flex';
-    // Starte den ersten Song für Spieler 1:
-    if (!cachedPlaylistTracks) {
-      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    correctButton.disabled = false;
-    wrongButton.disabled = false;
-    const randomItem = getRandomTrack(cachedPlaylistTracks);
-    console.log("Random Item:", randomItem);
-    if (!randomItem || !randomItem.track) {
-      M.toast({ html: "Kein Song gefunden", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    selectedTrackUri = randomItem.track.uri;
-    console.log("Ausgewählte Track URI:", selectedTrackUri);
-    let randomCategory = "";
-    if (mobileCategories && mobileCategories.length > 0) {
-      const randomIndex = Math.floor(Math.random() * mobileCategories.length);
-      randomCategory = mobileCategories[randomIndex];
-    }
-    console.log("Ausgewählte Kategorie:", randomCategory);
-    updateCategoryDisplay(randomCategory);
-    updateTrackDetails(randomItem.track, randomItem.added_by);
-    await spotifySDKReady;
-    // iOS: activateElement auf dem Startbutton (der Klick zählt bereits als User-Interaktion)
-    if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
-      window.mobilePlayer.activateElement(document.getElementById('start-button'));
-    }
-    const success = await window.playTrack(selectedTrackUri);
-    if (!success) {
-      M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
-    }
-    firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
-    saveCurrentPlayerIndex(currentPlayerIndex);
-    updateScoreDisplay();
-    updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
-    playButton.disabled = true;
-  });
+
+  correctButton.disabled = false;
+  wrongButton.disabled = false;
+  const randomItem = getRandomTrack(cachedPlaylistTracks);
+  console.log("Random Item:", randomItem);
+  if (!randomItem || !randomItem.track) {
+    M.toast({ html: "Kein Song gefunden", classes: "rounded", displayLength: 2000 });
+    return;
+  }
+  selectedTrackUri = randomItem.track.uri;
+  console.log("Ausgewählte Track URI:", selectedTrackUri);
+  let randomCategory = "";
+  if (mobileCategories && mobileCategories.length > 0) {
+    const randomIndex = Math.floor(Math.random() * mobileCategories.length);
+    randomCategory = mobileCategories[randomIndex];
+  }
+  console.log("Ausgewählte Kategorie:", randomCategory);
+  updateCategoryDisplay(randomCategory);
+  updateTrackDetails(randomItem.track, randomItem.added_by);
+  await spotifySDKReady;
+  // iOS: activateElement auf dem Start-Button (der Klick zählt als User-Interaktion)
+  if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
+    window.mobilePlayer.activateElement(document.getElementById('start-button'));
+  }
+  const success = await window.playTrack(selectedTrackUri);
+  if (!success) {
+    M.toast({ html: "Fehler beim Abspielen des Songs", classes: "rounded", displayLength: 2000 });
+  }
+  firstRound = false; // Beim ersten Song bleibt Spieler 1 aktiv
+  saveCurrentPlayerIndex(currentPlayerIndex);
+  updateScoreDisplay();
+  updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
+  playButton.disabled = true;
+});
+
   
   // Event Listener: "Nächster Song"-Button
   playButton.addEventListener('click', async () => {
@@ -593,6 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Weiter-Button: Speichert Playlist-URL und Kategorien in localStorage und leitet zu categorie2.html weiter
   document.getElementById('next-button').addEventListener('click', () => {
     const playlistUrl = document.getElementById('playlist-url').value.trim();
+    console.log(localStorage.getItem('mobilePlaylistUrl'));
     if (!playlistUrl) {
       M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
       return;
