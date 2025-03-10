@@ -161,11 +161,20 @@ function updateTrackDetails(track, addedBy) {
     let expanded = false;
     detailsContainer.onclick = function() {
       if (!expanded) {
+        // Nutze addedBy.display_name, falls vorhanden, sonst fall back auf addedBy.id
+        let addedByName = "unbekannt";
+        if (addedBy) {
+          if (addedBy.display_name && addedBy.display_name.trim() !== "") {
+            addedByName = addedBy.display_name;
+          } else if (addedBy.id) {
+            addedByName = addedBy.id;
+          }
+        }
         const fullDetails = `
           <p id="track-title">Titel: ${title}</p>
           <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
           <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
-          <p id="track-added">Hinzugefügt von: ${addedBy ? addedBy.id : "unbekannt"}</p>
+          <p id="track-added">Hinzugefügt von: ${addedByName}</p>
         `;
         detailsContainer.innerHTML = fullDetails;
         expanded = true;
@@ -176,6 +185,7 @@ function updateTrackDetails(track, addedBy) {
     };
   }
 }
+
 
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
