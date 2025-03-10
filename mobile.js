@@ -101,21 +101,30 @@ function getWinningScore() {
 
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
-  const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
+  let allTracks = [];
+  let limit = 50; // maximale Anzahl pro Anfrage
+  let offset = 0;
+  let total = 0;
   try {
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    console.log("Playlist data received:", data);
-    if (data && data.items) {
-      console.log("Anzahl geladener Tracks:", data.items.length);
-      cachedPlaylistTracks = data.items;
-      return cachedPlaylistTracks;
-    } else {
-      console.error("Keine Tracks gefunden:", data);
-      return [];
-    }
+    do {
+      const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
+      const response = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      console.log("Playlist data received:", data);
+      if (data && data.items) {
+        allTracks = allTracks.concat(data.items);
+        total = data.total; // Gesamtanzahl der Songs in der Playlist
+        offset += limit;
+      } else {
+        console.error("Keine Tracks gefunden:", data);
+        break;
+      }
+    } while (allTracks.length < total);
+    console.log("Total loaded tracks:", allTracks.length);
+    cachedPlaylistTracks = allTracks;
+    return cachedPlaylistTracks;
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);
     return null;
@@ -126,9 +135,13 @@ async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
-
-  const tracks = await fetchPlaylistTracks(playlistId);
+  if (!playlistId) {
+    console.error("Ungültige Playlist-ID");
+    return;
+  }
+  await fetchPlaylistTracks(playlistId);
 }
+
 
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
