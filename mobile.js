@@ -131,6 +131,8 @@ async function fetchPlaylistTracks(playlistId) {
   }
 }
 
+// ... (alle vorherigen Funktionen und Variablendeklarationen bleiben unverändert)
+
 async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
   console.log("Stored Playlist URL:", playlistUrl);
@@ -139,193 +141,13 @@ async function loadPlaylist() {
     console.error("Ungültige Playlist-ID");
     return;
   }
-  await fetchPlaylistTracks(playlistId);
-}
-
-async function fetchUserName(userId) {
-  const token = localStorage.getItem('access_token');
-  try {
-    const response = await fetch(`https://api.spotify.com/v1/users/${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    // Falls display_name existiert, benutze diesen, ansonsten die ID
-    return data.display_name && data.display_name.trim() !== "" ? data.display_name : data.id;
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    return userId;
+  const tracks = await fetchPlaylistTracks(playlistId);
+  if (!tracks || tracks.length === 0) {
+    M.toast({ html: "Keine Songs in der gespeicherten Playlist gefunden", classes: "rounded", displayLength: 2000 });
   }
 }
 
-function getRandomTrack(tracks) {
-  if (!tracks || tracks.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * tracks.length);
-  return tracks[randomIndex];
-}
-
-function updateTrackDetails(track, addedBy) {
-  const detailsContainer = document.getElementById('track-details');
-  if (detailsContainer) {
-    let title = track.name;
-    if (title.includes("-")) {
-      title = title.split("-")[0].trim();
-    }
-    // Zeige zuerst den statischen Text
-    detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
-    detailsContainer.style.display = 'block';
-    let expanded = false;
-    detailsContainer.onclick = async function() {
-      if (!expanded) {
-        let addedByName = "unbekannt";
-        if (addedBy) {
-          if (addedBy.display_name && addedBy.display_name.trim() !== "") {
-            addedByName = addedBy.display_name;
-          } else {
-            addedByName = await fetchUserName(addedBy.id);
-          }
-        }
-        const fullDetails = `
-          <p id="track-title">Titel: ${title}</p>
-          <p id="track-artist">Interpret: ${track.artists.map(a => a.name).join(", ")}</p>
-          <p id="track-year">Erscheinungsjahr: ${track.album.release_date.substring(0,4)}</p>
-          <p id="track-added">Hinzugefügt von: ${addedByName}</p>
-        `;
-        detailsContainer.innerHTML = fullDetails;
-        expanded = true;
-      } else {
-        detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
-        expanded = false;
-      }
-    };
-  }
-}
-
-function updateCategoryDisplay(category) {
-  const categoryHeading = document.getElementById('category-heading');
-  if (categoryHeading) {
-    categoryHeading.textContent = category ? "Kategorie: " + category : "";
-  }
-}
-
-// Spotify Web Playback SDK Setup – nur eine einzige Deklaration von spotifySDKReady
-let spotifySDKReady = new Promise((resolve) => {
-  window.onSpotifyWebPlaybackSDKReady = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-    const player = new Spotify.Player({
-      name: 'Mobile Web Player',
-      getOAuthToken: cb => { cb(token); }
-    });
-    window.mobilePlayer = player;
-    player.addListener('ready', ({ device_id }) => {
-      window.deviceId = device_id;
-      console.log("Spotify player ready, device_id:", device_id);
-    });
-    player.addListener('initialization_error', ({ message }) => {
-      console.error('Initialization Error:', message);
-    });
-    player.addListener('authentication_error', ({ message }) => {
-      console.error('Authentication Error:', message);
-    });
-    player.addListener('account_error', ({ message }) => {
-      console.error('Account Error:', message);
-    });
-    player.addListener('playback_error', ({ message }) => {
-      console.error('Playback Error:', message);
-    });
-    player.connect().then(() => {
-      window.playTrack = async function(trackUri) {
-        const token = localStorage.getItem('access_token');
-        if (!token) return false;
-        let waitTime = 0;
-        while (!window.deviceId && waitTime < 10000) {
-          await new Promise(res => setTimeout(res, 200));
-          waitTime += 200;
-        }
-        if (!window.deviceId) {
-          console.error("Spotify player not ready");
-          return false;
-        }
-        try {
-          let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ uris: [trackUri] }),
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.status === 204) {
-            console.log("Track started successfully.");
-            return true;
-          } else if (response.status === 401) {
-            console.error("Session expired");
-            return false;
-          } else {
-            const data = await response.json();
-            console.error("Spotify API error:", data);
-            return false;
-          }
-        } catch (error) {
-          console.error("Error playing track:", error);
-          return false;
-        }
-      };
-
-      window.resumePlayback = async function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) return false;
-        try {
-          let response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
-            method: 'PUT',
-            body: JSON.stringify({}), // Leerer Body
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.status === 204) {
-            console.log("Playback resumed successfully.");
-            return true;
-          } else {
-            const data = await response.text();
-            console.error("Error resuming playback:", data);
-            return false;
-          }
-        } catch (error) {
-          console.error("Error resuming playback:", error);
-          return false;
-        }
-      };
-
-      window.stopPlayback = async function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-        try {
-          let response = await fetch('https://api.spotify.com/v1/me/player/pause', {
-            method: 'PUT',
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.status === 204) {
-            console.log("Playback stopped.");
-          } else {
-            const errorText = await response.text();
-            console.error("Error stopping playback:", errorText);
-          }
-        } catch (error) {
-          console.error("Error stopping track:", error);
-        }
-      };
-
-      resolve();
-    });
-  };
-});
-
-// DOMContentLoaded-Block für alle Event Listener
+// Event Listener für den DOMContentLoaded-Block (nur relevant auf mobil.html)
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
@@ -364,12 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
+  // Playlist wird NICHT automatisch geladen – sie soll erst beim Klick auf den Start-Button (bzw. "Nächster Song") geladen werden.
+  // (Alternativ kannst du loadPlaylist() hier auch ein Mal aufrufen, wenn du möchtest.)
 
-  loadPlaylist();
-
-  
-  
-  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
+  // Initialer Zustand der Elemente:
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -388,8 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
     scoreboardBtn.style.display = 'none';
   }
   
-  // Event Listener: Start-Button
+  // Event Listener: Start-Button – Wird beim allerersten Song ausgeführt
   startButton.addEventListener('click', async () => {
+    // Falls die Playlist noch nicht geladen ist, laden:
+    if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
+      await loadPlaylist();
+      if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
+        M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+    }
+    
     startButton.style.display = 'none';
     controlButtons.style.display = 'block';
     document.getElementById('score-display').style.display = 'block';
@@ -398,13 +227,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('correct-button').style.display = 'block';
     document.getElementById('wrong-button').style.display = 'block';
     scoreboardBtn.style.display = 'flex';
-    // Starte den ersten Song für Spieler 1:
-    if (!cachedPlaylistTracks) {
-      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
-      return;
-    }
+    
     correctButton.disabled = false;
     wrongButton.disabled = false;
+    
     const randomItem = getRandomTrack(cachedPlaylistTracks);
     console.log("Random Item:", randomItem);
     if (!randomItem || !randomItem.track) {
@@ -412,7 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     selectedTrackUri = randomItem.track.uri;
-    console.log("Ausgewählte Track URI:", selectedTrackUri);
+    playedTrackUris.push(selectedTrackUri);
+    
     let randomCategory = "";
     if (mobileCategories && mobileCategories.length > 0) {
       const randomIndex = Math.floor(Math.random() * mobileCategories.length);
@@ -422,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryDisplay(randomCategory);
     updateTrackDetails(randomItem.track, randomItem.added_by);
     await spotifySDKReady;
-    // iOS: activateElement auf dem Startbutton (der Klick zählt bereits als User-Interaktion)
+    // Für iOS: User-Interaktion aktivieren (activateElement)
     if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
       window.mobilePlayer.activateElement(document.getElementById('start-button'));
     }
@@ -439,12 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Event Listener: "Nächster Song"-Button
   playButton.addEventListener('click', async () => {
-    if (!cachedPlaylistTracks) {
-      M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
+    // Prüfe, ob die Playlist bereits geladen ist – wenn nicht, toast und abbrechen
+    if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
+      M.toast({ html: "Alle Songs der Playlist wurden abgespielt.", classes: "rounded", displayLength: 3000 });
       return;
     }
+    
     correctButton.disabled = false;
     wrongButton.disabled = false;
+    
     const randomItem = getRandomTrack(cachedPlaylistTracks);
     console.log("Random Item:", randomItem);
     if (!randomItem || !randomItem.track) {
@@ -452,7 +282,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     selectedTrackUri = randomItem.track.uri;
-    console.log("Ausgewählte Track URI:", selectedTrackUri);
+    playedTrackUris.push(selectedTrackUri);
+    
     let randomCategory = "";
     if (mobileCategories && mobileCategories.length > 0) {
       const randomIndex = Math.floor(Math.random() * mobileCategories.length);
@@ -462,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryDisplay(randomCategory);
     updateTrackDetails(randomItem.track, randomItem.added_by);
     await spotifySDKReady;
-    // iOS: activateElement auf dem "Nächster Song"-Button
     if (isIOS() && window.mobilePlayer && typeof window.mobilePlayer.activateElement === 'function') {
       window.mobilePlayer.activateElement(document.getElementById('play-button'));
     }
@@ -475,21 +305,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Entferne den abgespielten Song aus dem Cache
     cachedPlaylistTracks = cachedPlaylistTracks.filter(item => item.track.uri !== selectedTrackUri);
-    
-    // Überprüfe, ob der Cache jetzt leer ist
     if (cachedPlaylistTracks.length === 0) {
       M.toast({ html: "Alle Songs der Playlist wurden abgespielt", classes: "rounded", displayLength: 3000 });
     }
-    
     saveCurrentPlayerIndex(currentPlayerIndex);
     updateScoreDisplay();
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
     playButton.disabled = true;
   });
   
-  
-  
-  // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach "Nächster Song" aktivieren
+  // Event Listener: Bewertungsbuttons – stopPlayback wird aufgerufen, danach "Nächster Song" aktivieren
   const correctBtn = document.getElementById('correct-button');
   correctBtn.addEventListener('click', async () => {
     if (window.stopPlayback) await window.stopPlayback();
@@ -514,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Scoreboard-Overlay: Öffne bei Klick auf den Scoreboard-Button
+  const scoreboardBtn = document.getElementById('scoreboard-btn');
   const scoreOverlay = document.getElementById('score-overlay');
   const closeScoreOverlay = document.getElementById('close-score-overlay');
   if (scoreboardBtn && scoreOverlay && closeScoreOverlay) {
@@ -564,58 +390,126 @@ function logout() {
   sessionStorage.clear();
   window.location.href = 'index.html';
 }
+
+// Zusätzliche DOMContentLoaded-Block für Kategorien & Mitspieler (categories1.html & categories2.html)
 document.addEventListener('DOMContentLoaded', () => {
-  // Kategorie hinzufügen: Neues Input-Feld ohne placeholder (Labels übernehmen die Anzeige)
-  document.getElementById('add-category').addEventListener('click', () => {
-    const container = document.getElementById('categories-container');
-    const div = document.createElement('div');
-    div.className = 'input-field';
-    div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
-    container.appendChild(div);
-  });
-  
-  // Kategorie entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
-  document.getElementById('remove-category').addEventListener('click', () => {
-    const container = document.getElementById('categories-container');
-    const fields = container.querySelectorAll('.input-field');
-    if (fields.length > 1) {
-      fields[fields.length - 1].remove();
-    }
-  });
-  
-  // Weiter-Button: Speichert Playlist-URL und Kategorien in localStorage und leitet zu categorie2.html weiter
-  document.getElementById('next-button').addEventListener('click', () => {
-    const playlistUrl = document.getElementById('playlist-url').value.trim();
-    if (!playlistUrl) {
-      M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('mobilePlaylistUrl', playlistUrl);
-    
-    const catInputs = document.querySelectorAll('.category-input');
-    let categories = [];
-    catInputs.forEach(input => {
-      const value = input.value.trim();
-      if (value) categories.push(value);
+  // Kategorie hinzufügen
+  const addCatBtn = document.getElementById('add-category');
+  if (addCatBtn) {
+    addCatBtn.addEventListener('click', () => {
+      const container = document.getElementById('categories-container');
+      const div = document.createElement('div');
+      div.className = 'input-field';
+      div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
+      container.appendChild(div);
     });
-    // Kategorien sind optional – wenn leer, speichern wir einen leeren Array
-    localStorage.setItem('mobileCategories', JSON.stringify(categories));
-    
-    window.location.href = 'categories2.html';
-  });
+  }
   
-  // Anleitung2 Overlay-Logik
+  // Kategorie entfernen
+  const removeCatBtn = document.getElementById('remove-category');
+  if (removeCatBtn) {
+    removeCatBtn.addEventListener('click', () => {
+      const container = document.getElementById('categories-container');
+      const fields = container.querySelectorAll('.input-field');
+      if (fields.length > 1) {
+        fields[fields.length - 1].remove();
+      }
+    });
+  }
+  
+  // Weiter-Button in categorie1.html
+  const nextBtn = document.getElementById('next-button');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const playlistUrl = document.getElementById('playlist-url').value.trim();
+      if (!playlistUrl) {
+        M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('mobilePlaylistUrl', playlistUrl);
+      
+      const catInputs = document.querySelectorAll('.category-input');
+      let categories = [];
+      catInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) categories.push(value);
+      });
+      localStorage.setItem('mobileCategories', JSON.stringify(categories));
+      
+      window.location.href = 'categories2.html';
+    });
+  }
+  
+  // Mitspieler hinzufügen in categorie2.html
+  const addPlayerBtn = document.getElementById('add-player');
+  if (addPlayerBtn) {
+    addPlayerBtn.addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const div = document.createElement('div');
+      div.className = 'input-field';
+      div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
+      container.appendChild(div);
+    });
+  }
+  
+  // Mitspieler entfernen in categorie2.html
+  const removePlayerBtn = document.getElementById('remove-player');
+  if (removePlayerBtn) {
+    removePlayerBtn.addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const fields = container.querySelectorAll('.input-field');
+      if (fields.length > 1) {
+        fields[fields.length - 1].remove();
+      }
+    });
+  }
+  
+  // Bestätigen-Button in categorie2.html
+  const confirmBtn = document.getElementById('confirm-button');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      const playerInputs = document.querySelectorAll('.player-input');
+      let players = [];
+      playerInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) players.push(value);
+      });
+      if (players.length === 0) {
+        M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('mobilePlayers', JSON.stringify(players));
+      
+      const winningScoreInput = document.getElementById('winning-score').value.trim();
+      const winningScore = parseInt(winningScoreInput, 10);
+      if (isNaN(winningScore) || winningScore < 1) {
+        M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('winningScore', winningScore.toString());
+      
+      localStorage.setItem('currentPlayerIndex', "0");
+      let scores = new Array(players.length).fill(0);
+      localStorage.setItem('playerScores', JSON.stringify(scores));
+      
+      console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
+      console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
+      window.location.href = 'mobil.html';
+    });
+  }
+  
+  // Anleitung2 Overlay in categorie1.html
   const anleitung2Btn = document.getElementById('anleitung2-button');
   const anleitung2Overlay = document.getElementById('anleitung2-overlay');
   const closeAnleitung2Btn = document.getElementById('close-anleitung2');
-  
-  anleitung2Btn.addEventListener('click', () => {
-    anleitung2Overlay.style.display = 'flex';
-  });
-  
-  closeAnleitung2Btn.addEventListener('click', () => {
-    anleitung2Overlay.style.display = 'none';
-  });
+  if (anleitung2Btn && anleitung2Overlay && closeAnleitung2Btn) {
+    anleitung2Btn.addEventListener('click', () => {
+      anleitung2Overlay.style.display = 'flex';
+    });
+    closeAnleitung2Btn.addEventListener('click', () => {
+      anleitung2Overlay.style.display = 'none';
+    });
+  }
 });
 
 function setViewportHeight() {
@@ -624,58 +518,6 @@ function setViewportHeight() {
 }
 setViewportHeight();
 window.addEventListener('resize', setViewportHeight);
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Mitspieler hinzufügen
-  document.getElementById('add-player').addEventListener('click', () => {
-    const container = document.getElementById('players-container');
-    const div = document.createElement('div');
-    div.className = 'input-field';
-    div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
-    container.appendChild(div);
-  });
-  
-  // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
-  document.getElementById('remove-player').addEventListener('click', () => {
-    const container = document.getElementById('players-container');
-    const fields = container.querySelectorAll('.input-field');
-    if (fields.length > 1) {
-      fields[fields.length - 1].remove();
-    }
-  });
-  
-  // Bestätigen-Button: Speichern der Mitspieler und Gewinnpunkte, dann Weiterleitung zu mobil.html
-  document.getElementById('confirm-button').addEventListener('click', () => {
-    const playerInputs = document.querySelectorAll('.player-input');
-    let players = [];
-    playerInputs.forEach(input => {
-      const value = input.value.trim();
-      if (value) players.push(value);
-    });
-    if (players.length === 0) {
-      M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('mobilePlayers', JSON.stringify(players));
-    
-    const winningScoreInput = document.getElementById('winning-score').value.trim();
-    const winningScore = parseInt(winningScoreInput, 10);
-    if (isNaN(winningScore) || winningScore < 1) {
-      M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
-      return;
-    }
-    localStorage.setItem('winningScore', winningScore.toString());
-    
-    // Initialisiere den aktuellen Spieler-Index und Scores
-    localStorage.setItem('currentPlayerIndex', "0");
-    let playerScores = new Array(players.length).fill(0);
-    localStorage.setItem('playerScores', JSON.stringify(playerScores));
-    
-    console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
-    console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
-    window.location.href = 'mobil.html';
-  });
-});
 
 async function checkSpotifySessionValidity() {
   const token = localStorage.getItem('access_token');
@@ -688,12 +530,10 @@ async function checkSpotifySessionValidity() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.status === 401) {
-      // Session ist abgelaufen
       window.location.href = 'index.html';
     }
   } catch (error) {
     console.error("Fehler beim Überprüfen der Spotify-Session:", error);
-    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
   }
 }
 
