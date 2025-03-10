@@ -102,7 +102,7 @@ function getWinningScore() {
 async function fetchPlaylistTracks(playlistId) {
   const token = localStorage.getItem('access_token');
   let allTracks = [];
-  let limit = 50;
+  let limit = 50; // maximale Anzahl pro Anfrage
   let offset = 0;
   let total = 0;
   try {
@@ -115,80 +115,21 @@ async function fetchPlaylistTracks(playlistId) {
       console.log("Playlist data received:", data);
       if (data && data.items) {
         allTracks = allTracks.concat(data.items);
-        total = data.total;
+        total = data.total; // Gesamtanzahl der Songs in der Playlist
         offset += limit;
-      } else {async function fetchPlaylistTracks(playlistId) {
-        const token = localStorage.getItem('access_token');
-        let allTracks = [];
-        let limit = 50;
-        let offset = 0;
-        let total = 0;
-        try {
-          do {
-            const endpoint = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
-            const response = await fetch(endpoint, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            console.log("Playlist data received:", data);
-            if (data && data.items) {
-              allTracks = allTracks.concat(data.items);
-              total = data.total;
-              offset += limit;
-            } else {
-              console.error("Keine Tracks gefunden:", data);
-              break;
-            }
-          } while (allTracks.length < total);
-          console.log("Total loaded tracks:", allTracks.length);
-          return allTracks;
-        } catch (error) {
-          console.error("Error fetching playlist tracks:", error);
-          return null;
-        }
-      }
+      } else {
         console.error("Keine Tracks gefunden:", data);
         break;
       }
     } while (allTracks.length < total);
     console.log("Total loaded tracks:", allTracks.length);
-    return allTracks;
+    cachedPlaylistTracks = allTracks;
+    return cachedPlaylistTracks;
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);
     return null;
   }
 }
-
-async function loadPlaylistForValidation() {
-  const playlistUrl = document.getElementById('playlist-url').value.trim();
-  const regex = /playlist\/([a-zA-Z0-9]+)/;
-  const match = playlistUrl.match(regex);
-  if (!match) return null;
-  const playlistId = match[1];
-  const tracks = await fetchPlaylistTracks(playlistId);
-  return tracks;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const nextButton = document.getElementById('next-button');
-  const playlistInput = document.getElementById('playlist-url');
-  
-  // Beim Verlassen des Eingabefelds (blur) wird die Playlist validiert
-  playlistInput.addEventListener('blur', async () => {
-    const url = playlistInput.value.trim();
-    if (!url) {
-      nextButton.disabled = true;
-      return;
-    }
-    const tracks = await loadPlaylistForValidation();
-    if (tracks && tracks.length > 0) {
-      nextButton.disabled = false;
-      M.toast({ html: `${tracks.length} Songs gefunden`, classes: "rounded", displayLength: 2000 });
-    } else {
-      nextButton.disabled = true;
-      M.toast({ html: "Playlist konnte nicht geladen werden", classes: "rounded", displayLength: 2000 });
-    }
-  });
 
 async function loadPlaylist() {
   const playlistUrl = getStoredPlaylistUrl();
@@ -221,58 +162,6 @@ function getRandomTrack(tracks) {
   const randomIndex = Math.floor(Math.random() * tracks.length);
   return tracks[randomIndex];
 }
-
- // Kategorie hinzufügen
- document.getElementById('add-category').addEventListener('click', () => {
-  const container = document.getElementById('categories-container');
-  const div = document.createElement('div');
-  div.className = 'input-field';
-  // Ohne placeholder, damit Label und Input sich nicht überlagern
-  div.innerHTML = '<input class="category-input" type="text"><label>Kategorie eintragen</label>';
-  container.appendChild(div);
-});
-
-// Kategorie entfernen
-document.getElementById('remove-category').addEventListener('click', () => {
-  const container = document.getElementById('categories-container');
-  const fields = container.querySelectorAll('.input-field');
-  if (fields.length > 1) {
-    fields[fields.length - 1].remove();
-  }
-});
-
-// Weiter-Button: Speichert Playlist-URL und Kategorien in localStorage und leitet zu categorie2.html weiter
-document.getElementById('next-button').addEventListener('click', () => {
-  const playlistUrl = playlistInput.value.trim();
-  if (!playlistUrl) {
-    M.toast({ html: "Bitte Playlist URL eingeben", classes: "rounded", displayLength: 2000 });
-    return;
-  }
-  localStorage.setItem('mobilePlaylistUrl', playlistUrl);
-  
-  const catInputs = document.querySelectorAll('.category-input');
-  let categories = [];
-  catInputs.forEach(input => {
-    const value = input.value.trim();
-    if (value) categories.push(value);
-  });
-  // Kategorien sind optional
-  localStorage.setItem('mobileCategories', JSON.stringify(categories));
-  
-  window.location.href = 'categories2.html';
-});
-
-// Anleitung-Overlay
-const anleitung2Btn = document.getElementById('anleitung2-button');
-const anleitung2Overlay = document.getElementById('anleitung2-overlay');
-const closeAnleitung2Btn = document.getElementById('close-anleitung2');
-
-anleitung2Btn.addEventListener('click', () => {
-  anleitung2Overlay.style.display = 'flex';
-});
-
-closeAnleitung2Btn.addEventListener('click', () => {
-  anleitung2Overlay.style.display = 'none';
 
 function updateTrackDetails(track, addedBy) {
   const detailsContainer = document.getElementById('track-details');
