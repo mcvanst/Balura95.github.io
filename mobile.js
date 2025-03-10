@@ -200,8 +200,6 @@ function updateTrackDetails(track, addedBy) {
   }
 }
 
-
-
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
@@ -366,8 +364,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-  // Playlist laden
-  loadPlaylist();
+  document.addEventListener('DOMContentLoaded', () => {
+    // Nur auf mobil.html die Playlist laden:
+    if (window.location.pathname.endsWith("mobil.html")) {
+      loadPlaylist();
+    }
+    
+    // ...restlicher Code, der in allen Seiten ausgeführt wird
+  });
+  
   
   // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
   const startButton = document.getElementById('start-button');
