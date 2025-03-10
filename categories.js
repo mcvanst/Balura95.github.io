@@ -51,3 +51,55 @@ document.addEventListener('DOMContentLoaded', () => {
     anleitung2Overlay.style.display = 'none';
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Mitspieler hinzufügen
+    document.getElementById('add-player').addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const div = document.createElement('div');
+      div.className = 'input-field';
+      div.innerHTML = '<input class="player-input" type="text" value=""><label>Wer spielt noch mit?</label>';
+      container.appendChild(div);
+    });
+    
+    // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
+    document.getElementById('remove-player').addEventListener('click', () => {
+      const container = document.getElementById('players-container');
+      const fields = container.querySelectorAll('.input-field');
+      if (fields.length > 1) {
+        fields[fields.length - 1].remove();
+      }
+    });
+    
+    // Bestätigen-Button: Speichern der Mitspieler und Gewinnpunkte, dann Weiterleitung zu mobil.html
+    document.getElementById('confirm-button').addEventListener('click', () => {
+      const playerInputs = document.querySelectorAll('.player-input');
+      let players = [];
+      playerInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) players.push(value);
+      });
+      if (players.length === 0) {
+        M.toast({ html: "Bitte mindestens einen Mitspieler eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('mobilePlayers', JSON.stringify(players));
+      
+      const winningScoreInput = document.getElementById('winning-score').value.trim();
+      const winningScore = parseInt(winningScoreInput, 10);
+      if (isNaN(winningScore) || winningScore < 1) {
+        M.toast({ html: "Bitte gültige Gewinnpunkte (mind. 1) eingeben", classes: "rounded", displayLength: 2000 });
+        return;
+      }
+      localStorage.setItem('winningScore', winningScore.toString());
+      
+      // Initialisiere den aktuellen Spieler-Index und Scores
+      localStorage.setItem('currentPlayerIndex', "0");
+      let playerScores = new Array(players.length).fill(0);
+      localStorage.setItem('playerScores', JSON.stringify(playerScores));
+      
+      console.log("Gespeicherte Mitspieler:", localStorage.getItem('mobilePlayers'));
+      console.log("Gewinnpunkte:", localStorage.getItem('winningScore'));
+      window.location.href = 'mobil.html';
+    });
+  });
