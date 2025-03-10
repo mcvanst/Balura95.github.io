@@ -143,6 +143,7 @@ async function loadPlaylist() {
   await fetchPlaylistTracks(playlistId);
 }
 
+<<<<<<< HEAD
 
 async function fetchUserName(userId) {
   const token = localStorage.getItem('access_token');
@@ -158,6 +159,8 @@ async function fetchUserName(userId) {
     return userId;
   }
 }
+=======
+>>>>>>> parent of a5efaac (Update mobile.js)
 
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
@@ -172,18 +175,18 @@ function updateTrackDetails(track, addedBy) {
     if (title.includes("-")) {
       title = title.split("-")[0].trim();
     }
-    // Zeige zuerst den statischen Text
     detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
     detailsContainer.style.display = 'block';
     let expanded = false;
-    detailsContainer.onclick = async function() {
+    detailsContainer.onclick = function() {
       if (!expanded) {
+        // Nutze addedBy.display_name, falls vorhanden, sonst fall back auf addedBy.id
         let addedByName = "unbekannt";
         if (addedBy) {
           if (addedBy.display_name && addedBy.display_name.trim() !== "") {
             addedByName = addedBy.display_name;
-          } else {
-            addedByName = await fetchUserName(addedBy.id);
+          } else if (addedBy.id) {
+            addedByName = addedBy.id;
           }
         }
         const fullDetails = `
@@ -202,6 +205,10 @@ function updateTrackDetails(track, addedBy) {
   }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of a5efaac (Update mobile.js)
 function updateCategoryDisplay(category) {
   const categoryHeading = document.getElementById('category-heading');
   if (categoryHeading) {
