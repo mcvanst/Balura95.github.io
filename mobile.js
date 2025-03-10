@@ -142,6 +142,20 @@ async function loadPlaylist() {
   await fetchPlaylistTracks(playlistId);
 }
 
+async function fetchUserName(userId) {
+  const token = localStorage.getItem('access_token');
+  try {
+    const response = await fetch(`https://api.spotify.com/v1/users/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    // Falls display_name existiert, benutze diesen, ansonsten die ID
+    return data.display_name && data.display_name.trim() !== "" ? data.display_name : data.id;
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    return userId;
+  }
+}
 
 function getRandomTrack(tracks) {
   if (!tracks || tracks.length === 0) return null;
@@ -156,18 +170,18 @@ function updateTrackDetails(track, addedBy) {
     if (title.includes("-")) {
       title = title.split("-")[0].trim();
     }
+    // Zeige zuerst den statischen Text
     detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
     detailsContainer.style.display = 'block';
     let expanded = false;
-    detailsContainer.onclick = function() {
+    detailsContainer.onclick = async function() {
       if (!expanded) {
-        // Nutze addedBy.display_name, falls vorhanden, sonst fall back auf addedBy.id
         let addedByName = "unbekannt";
         if (addedBy) {
           if (addedBy.display_name && addedBy.display_name.trim() !== "") {
             addedByName = addedBy.display_name;
-          } else if (addedBy.id) {
-            addedByName = addedBy.id;
+          } else {
+            addedByName = await fetchUserName(addedBy.id);
           }
         }
         const fullDetails = `
@@ -185,6 +199,7 @@ function updateTrackDetails(track, addedBy) {
     };
   }
 }
+
 
 
 function updateCategoryDisplay(category) {
