@@ -136,11 +136,13 @@ async function loadPlaylist() {
   console.log("Stored Playlist URL:", playlistUrl);
   const playlistId = extractPlaylistId(playlistUrl);
   if (!playlistId) {
-    console.error("Ungültige Playlist-ID");
+    console.error("Ungültige Playlist-ID – überprüfe die gespeicherte Playlist URL:", playlistUrl);
+    M.toast({ html: "Ungültige Playlist URL", classes: "rounded", displayLength: 2000 });
     return;
   }
   await fetchPlaylistTracks(playlistId);
 }
+
 
 async function fetchUserName(userId) {
   const token = localStorage.getItem('access_token');
