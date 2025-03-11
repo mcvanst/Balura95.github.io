@@ -363,7 +363,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     document.removeEventListener('touchstart', resumeAudioContext);
   });
-  
+  document.getElementById('score-display').style.display = 'none';
+  document.getElementById('category-heading').style.display = 'none';
+  document.getElementById('player-turn').style.display = 'none';
   // WICHTIG: Lade Playlist erst, bevor der Start-Button angezeigt wird!
   await loadPlaylist();
   // Nachdem die Playlist geladen wurde, setze den anfänglichen UI-Zustand:
