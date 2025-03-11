@@ -170,7 +170,7 @@ function updateTrackDetails(track, addedBy) {
     if (title.includes("-")) {
       title = title.split("-")[0].trim();
     }
-    // Zeige zuerst den statischen Text
+    // Zeige zunächst den statischen Text
     detailsContainer.innerHTML = `<p id="track-info">Songinfos auflösen</p>`;
     detailsContainer.style.display = 'block';
     let expanded = false;
@@ -326,7 +326,7 @@ let spotifySDKReady = new Promise((resolve) => {
 });
 
 // DOMContentLoaded-Block für alle Event Listener
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!localStorage.getItem('access_token')) {
     window.location.href = 'index.html';
     return;
@@ -364,12 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('touchstart', resumeAudioContext);
   });
   
-
-  loadPlaylist();
-
-  
-  
-  // Initialer Zustand: Start-Button sichtbar, Steuerungsbereich ausgeblendet, Scoreanzeige, Kategorie & Spieleranzeige ausgeblendet, Scoreboard-Button versteckt
+  // WICHTIG: Lade Playlist erst, bevor der Start-Button angezeigt wird!
+  await loadPlaylist();
+  // Nachdem die Playlist geladen wurde, setze den anfänglichen UI-Zustand:
   const startButton = document.getElementById('start-button');
   const controlButtons = document.getElementById('control-buttons');
   const correctButton = document.getElementById('correct-button');
@@ -399,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('wrong-button').style.display = 'block';
     scoreboardBtn.style.display = 'flex';
     // Starte den ersten Song für Spieler 1:
-    if (!cachedPlaylistTracks) {
+    if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
       return;
     }
@@ -439,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Event Listener: "Nächster Song"-Button
   playButton.addEventListener('click', async () => {
-    if (!cachedPlaylistTracks) {
+    if (!cachedPlaylistTracks || cachedPlaylistTracks.length === 0) {
       M.toast({ html: "Playlist wurde nicht geladen.", classes: "rounded", displayLength: 2000 });
       return;
     }
@@ -486,8 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePlayerDisplay(mobilePlayers[currentPlayerIndex] || "Unbekannt");
     playButton.disabled = true;
   });
-  
-  
   
   // Event Listener: Bewertungsbuttons – stopPlayback wird automatisch aufgerufen, danach "Nächster Song" aktivieren
   const correctBtn = document.getElementById('correct-button');
@@ -565,15 +560,12 @@ function logout() {
   window.location.href = 'index.html';
 }
 
-
 function setViewportHeight() {
   let vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
 setViewportHeight();
 window.addEventListener('resize', setViewportHeight);
-
-
 
 async function checkSpotifySessionValidity() {
   const token = localStorage.getItem('access_token');
@@ -591,7 +583,6 @@ async function checkSpotifySessionValidity() {
     }
   } catch (error) {
     console.error("Fehler beim Überprüfen der Spotify-Session:", error);
-    // Optional: Bei einem Fehler ebenfalls umleiten oder eine Fehlermeldung anzeigen
   }
 }
 
