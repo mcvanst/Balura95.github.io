@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(div);
 
     // Fokus auf das neu hinzugefügte Eingabefeld setzen
-    div.querySelector('.player-input').focus();
   });
 
   // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
