@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     div.className = 'input-field';
     div.innerHTML = '<input class="category-input" type="text"><label>Weitere Kategorie hinzufügen</label>';
     container.appendChild(div);
+
+    const newInput = div.querySelector('.category-input');
+    newInput.focus();
   });
   
   // Kategorie entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
