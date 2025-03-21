@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(div);
 
     // Fokus auf das neu hinzugefügte Eingabefeld setzen
-    const newInput = div.querySelector('.category-input');
-    newInput.focus();
+    div.querySelector('.category-input').focus();
   });
 
   // Kategorie entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
@@ -63,8 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(div);
 
     // Fokus auf das neu hinzugefügte Eingabefeld setzen
-    const newInput = div.querySelector('.player-input');
-    newInput.focus();
+    div.querySelector('.player-input').focus();
   });
 
   // Mitspieler entfernen: Entfernt den letzten Eintrag, falls mehr als ein Feld vorhanden ist
