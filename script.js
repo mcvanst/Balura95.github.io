@@ -1,6 +1,6 @@
 // === Spotify Authentication & PKCE Setup ===
 const CLIENT_ID = '2d5437645a254b48ae5f836f8f106543';
-const REDIRECT_URI = 'https://mcvanst.github.io'; // MUSS exakt mit deiner Redirect URI im Spotify Developer Dashboard übereinstimmen
+const REDIRECT_URI = 'https://mcvanst.github.io/jgajulian/'; // MUSS exakt mit deiner Redirect URI im Spotify Developer Dashboard übereinstimmen
 const SCOPES = 'user-read-playback-state user-modify-playback-state streaming user-read-email user-read-private';
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
